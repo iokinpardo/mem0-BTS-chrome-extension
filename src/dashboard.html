@@ -3,20 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OpenMemory Dashboard</title>
+    <title>BTS Me-mory Dashboard</title>
     <style>
       :root {
-        color-scheme: dark;
-        --bg-dark: #0f172a;
-        --bg-card: #111c33;
-        --bg-muted: #1e293b;
-        --border-color: rgba(148, 163, 184, 0.25);
-        --text-primary: #e2e8f0;
-        --text-secondary: #94a3b8;
-        --accent: #7a5bf7;
-        --accent-strong: #5b41d9;
-        --danger: #ef4444;
-        --success: #22c55e;
+        color-scheme: light;
+        --surface-background: #f8f3ff;
+        --surface-panel: #ffffff;
+        --surface-muted: #f2e9ff;
+        --border-color: #d9cdeb;
+        --text-primary: #2d1a45;
+        --text-secondary: #6f5c88;
+        --accent: #e5007d;
+        --accent-strong: #c30063;
+        --accent-soft: #fbe1f0;
+        --danger: #c21f54;
+        --danger-soft: #fde3ed;
+        --success: #20865a;
+        --shadow-soft: 0 14px 40px rgba(92, 58, 129, 0.16);
       }
 
       * {
@@ -26,8 +29,8 @@
       body {
         margin: 0;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: radial-gradient(circle at top, rgba(79, 70, 229, 0.15), transparent 45%),
-          var(--bg-dark);
+        background: radial-gradient(circle at top, rgba(229, 0, 125, 0.1), transparent 55%),
+          var(--surface-background);
         color: var(--text-primary);
         min-height: 100vh;
         padding: 32px;
@@ -48,32 +51,57 @@
         gap: 16px;
       }
 
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .brand-logo {
+        display: inline-flex;
+        width: 54px;
+        height: 54px;
+        border-radius: 16px;
+        align-items: center;
+        justify-content: center;
+        background: var(--surface-panel);
+        box-shadow: var(--shadow-soft);
+      }
+
+      .brand svg {
+        width: 42px;
+        height: 42px;
+      }
+
       .dashboard__header h1 {
         margin: 0;
-        font-size: 28px;
+        font-size: 30px;
         font-weight: 700;
+        letter-spacing: 0.01em;
       }
 
       .dashboard__header p {
-        margin: 4px 0 0;
+        margin: 6px 0 0;
         color: var(--text-secondary);
+        font-size: 15px;
+        max-width: 520px;
       }
 
       .refresh-button {
         background: var(--accent);
-        color: white;
+        color: #fff;
         border: none;
-        border-radius: 8px;
-        padding: 10px 18px;
+        border-radius: 999px;
+        padding: 12px 22px;
         font-weight: 600;
         cursor: pointer;
-        box-shadow: 0 10px 25px rgba(122, 91, 247, 0.25);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 12px 24px rgba(229, 0, 125, 0.25);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
       }
 
       .refresh-button:hover:not(:disabled) {
         transform: translateY(-1px);
-        box-shadow: 0 12px 30px rgba(122, 91, 247, 0.35);
+        box-shadow: 0 16px 36px rgba(229, 0, 125, 0.3);
       }
 
       .refresh-button:disabled {
@@ -99,9 +127,9 @@
       }
 
       .tab-button.active {
-        background: rgba(122, 91, 247, 0.15);
+        background: var(--accent-soft);
         color: var(--text-primary);
-        border-color: rgba(122, 91, 247, 0.45);
+        border-color: rgba(229, 0, 125, 0.35);
       }
 
       .tab-panel {
@@ -113,39 +141,40 @@
       }
 
       .status-banner {
-        padding: 12px 16px;
-        border-radius: 10px;
+        padding: 14px 18px;
+        border-radius: 12px;
         border: 1px solid transparent;
         display: none;
         font-size: 14px;
+        font-weight: 500;
       }
 
       .status-banner[data-variant='info'] {
         display: block;
-        background: rgba(122, 91, 247, 0.15);
-        border-color: rgba(122, 91, 247, 0.25);
+        background: var(--accent-soft);
+        border-color: rgba(229, 0, 125, 0.25);
         color: var(--text-primary);
       }
 
       .status-banner[data-variant='error'] {
         display: block;
-        background: rgba(239, 68, 68, 0.12);
-        border-color: rgba(239, 68, 68, 0.25);
-        color: #fecaca;
+        background: var(--danger-soft);
+        border-color: rgba(194, 31, 84, 0.2);
+        color: var(--danger);
       }
 
       .status-banner[data-variant='success'] {
         display: block;
-        background: rgba(34, 197, 94, 0.12);
-        border-color: rgba(34, 197, 94, 0.25);
-        color: #bbf7d0;
+        background: rgba(32, 134, 90, 0.12);
+        border-color: rgba(32, 134, 90, 0.2);
+        color: var(--success);
       }
 
       .filters {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 16px;
-        margin-bottom: 20px;
+        gap: 18px;
+        margin-bottom: 18px;
       }
 
       .filter-group {
@@ -155,42 +184,43 @@
       }
 
       label {
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 600;
         color: var(--text-secondary);
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.05em;
       }
 
       input[type='search'],
       select {
         appearance: none;
-        background: var(--bg-card);
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        border-radius: 10px;
+        background: var(--surface-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
         padding: 12px 14px;
         color: var(--text-primary);
         font-size: 14px;
         transition: border 0.2s ease, box-shadow 0.2s ease;
-        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.35);
+        box-shadow: var(--shadow-soft);
       }
 
       select {
         padding-right: 42px;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 16 16'%3E%3Cpath fill='%23cbd5f5' d='M4.47 6.97a.75.75 0 0 1 1.06 0L8 9.44l2.47-2.47a.75.75 0 1 1 1.06 1.06L8.53 10.53a1.5 1.5 0 0 1-2.12 0L4.47 8.03a.75.75 0 0 1 0-1.06Z'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 16 16'%3E%3Cpath fill='%236f5c88' d='M4.47 6.97a.75.75 0 0 1 1.06 0L8 9.44l2.47-2.47a.75.75 0 1 1 1.06 1.06L8.53 10.53a1.5 1.5 0 0 1-2.12 0L4.47 8.03a.75.75 0 0 1 0-1.06Z'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 14px center;
+        background-color: var(--surface-panel);
       }
 
       input[type='search']:focus,
       select:focus {
         outline: none;
-        border-color: rgba(122, 91, 247, 0.55);
-        box-shadow: 0 12px 26px rgba(122, 91, 247, 0.18);
+        border-color: rgba(229, 0, 125, 0.45);
+        box-shadow: 0 16px 34px rgba(229, 0, 125, 0.18);
       }
 
       select option {
-        background: var(--bg-dark);
+        background: #ffffff;
         color: var(--text-primary);
       }
 
@@ -198,13 +228,79 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 40px;
-        padding: 0 18px;
+        min-height: 42px;
+        padding: 0 20px;
         border-radius: 9999px;
-        background: rgba(148, 163, 184, 0.15);
+        background: var(--surface-panel);
         color: var(--text-primary);
         font-weight: 600;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.35);
+        box-shadow: var(--shadow-soft);
+      }
+
+      .selection-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: var(--surface-panel);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-soft);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .selection-toolbar[data-active='false'] {
+        opacity: 0.85;
+      }
+
+      .selection-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .selection-summary strong {
+        font-size: 16px;
+      }
+
+      .selection-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .selection-actions button {
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-primary);
+        padding: 8px 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      }
+
+      .selection-actions button:hover:not(:disabled) {
+        background: var(--surface-muted);
+        border-color: rgba(229, 0, 125, 0.35);
+        color: var(--accent-strong);
+      }
+
+      .selection-actions button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .selection-actions .danger {
+        border-color: rgba(194, 31, 84, 0.35);
+        color: var(--danger);
+      }
+
+      .selection-actions .danger:hover:not(:disabled) {
+        background: var(--danger-soft);
+        color: var(--danger);
       }
 
       .pagination-bar {
@@ -212,12 +308,12 @@
         justify-content: flex-end;
         align-items: center;
         gap: 12px;
-        margin: 4px 0 20px;
+        margin: 6px 0 20px;
       }
 
       .pagination-button {
         background: transparent;
-        border: 1px solid rgba(148, 163, 184, 0.35);
+        border: 1px solid var(--border-color);
         color: var(--text-primary);
         border-radius: 999px;
         padding: 8px 16px;
@@ -228,9 +324,9 @@
       }
 
       .pagination-button:hover:not(:disabled) {
-        background: rgba(122, 91, 247, 0.16);
-        border-color: rgba(122, 91, 247, 0.45);
-        color: var(--text-primary);
+        background: var(--surface-muted);
+        border-color: rgba(229, 0, 125, 0.35);
+        color: var(--accent-strong);
       }
 
       .pagination-button:disabled {
@@ -250,11 +346,11 @@
       }
 
       .memory-card {
-        background: var(--bg-card);
-        border: 1px solid rgba(148, 163, 184, 0.15);
-        border-radius: 16px;
-        padding: 18px 20px;
-        box-shadow: 0 18px 28px rgba(15, 23, 42, 0.35);
+        background: var(--surface-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        padding: 20px 22px 18px;
+        box-shadow: var(--shadow-soft);
         display: flex;
         flex-direction: column;
         gap: 12px;
@@ -262,8 +358,15 @@
       }
 
       .memory-card--highlight {
-        border-color: rgba(122, 91, 247, 0.6);
-        box-shadow: 0 0 0 2px rgba(122, 91, 247, 0.35);
+        border-color: rgba(229, 0, 125, 0.55);
+        box-shadow: 0 0 0 2px rgba(229, 0, 125, 0.25), var(--shadow-soft);
+      }
+
+      .memory-select {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+        align-self: flex-start;
       }
 
       .memory-text {
@@ -289,8 +392,8 @@
       }
 
       .memory-category {
-        background: rgba(122, 91, 247, 0.18);
-        color: var(--text-primary);
+        background: var(--accent-soft);
+        color: var(--accent-strong);
         padding: 4px 10px;
         border-radius: 999px;
         font-size: 12px;
@@ -305,18 +408,18 @@
 
       .ghost-button {
         background: transparent;
-        border: 1px solid rgba(239, 68, 68, 0.45);
-        color: #fca5a5;
+        border: 1px solid rgba(194, 31, 84, 0.4);
+        color: var(--danger);
         border-radius: 999px;
-        padding: 8px 16px;
+        padding: 8px 18px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: background 0.2s ease, color 0.2s ease;
       }
 
       .ghost-button:hover:not(:disabled) {
-        background: rgba(239, 68, 68, 0.12);
-        color: #fecaca;
+        background: var(--danger-soft);
+        color: var(--danger);
       }
 
       .ghost-button:disabled {
@@ -327,10 +430,11 @@
       .empty-state {
         padding: 40px;
         text-align: center;
-        background: var(--bg-card);
+        background: var(--surface-panel);
         border-radius: 16px;
-        border: 1px dashed rgba(148, 163, 184, 0.35);
+        border: 1px dashed var(--border-color);
         color: var(--text-secondary);
+        box-shadow: var(--shadow-soft);
       }
 
       .settings-grid {
@@ -340,11 +444,11 @@
       }
 
       .settings-card {
-        background: var(--bg-card);
+        background: var(--surface-panel);
         border-radius: 16px;
-        padding: 20px;
-        border: 1px solid rgba(148, 163, 184, 0.15);
-        box-shadow: 0 12px 22px rgba(15, 23, 42, 0.25);
+        padding: 22px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-soft);
         display: flex;
         flex-direction: column;
         gap: 12px;
@@ -402,8 +506,21 @@
           flex-wrap: wrap;
         }
 
+        .selection-toolbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .selection-actions {
+          width: 100%;
+        }
+
+        .selection-actions button {
+          flex: 1;
+        }
+
         .memory-card {
-          padding: 16px;
+          padding: 18px;
         }
       }
     </style>
@@ -411,9 +528,25 @@
   <body>
     <main>
       <header class="dashboard__header">
-        <div>
-          <h1>OpenMemory Dashboard</h1>
-          <p>Review your saved memories and the settings that power them.</p>
+        <div class="brand">
+          <span class="brand-logo" aria-hidden="true">
+            <svg viewBox="0 0 64 64" role="img" focusable="false">
+              <circle cx="21" cy="21" r="12" fill="#e5007d"></circle>
+              <circle cx="43" cy="21" r="12" fill="#e5007d"></circle>
+              <circle cx="32" cy="41" r="12" fill="#e5007d"></circle>
+              <path
+                d="M16 47c3 3.2 7.2 5 11.6 5h8.8C40.8 52 45 50.2 48 47"
+                stroke="#ffffff"
+                stroke-width="4"
+                stroke-linecap="round"
+                fill="none"
+              ></path>
+            </svg>
+          </span>
+          <div>
+            <h1>BTS Me-mory</h1>
+            <p>Brighten your BTS insights with every captured interaction.</p>
+          </div>
         </div>
         <button id="refreshMemories" class="refresh-button">Refresh</button>
       </header>
@@ -444,6 +577,17 @@
           <div class="filter-group">
             <label>Showing</label>
             <div id="memoryCountDisplay" class="count-pill">0</div>
+          </div>
+        </div>
+        <div id="selectionBar" class="selection-toolbar" data-active="false">
+          <div class="selection-summary">
+            <strong id="selectionSummary">No memories selected</strong>
+            <span><span id="selectedCount">0</span> selected</span>
+          </div>
+          <div class="selection-actions">
+            <button id="selectPage" type="button">Select page</button>
+            <button id="clearSelection" type="button" disabled>Clear selection</button>
+            <button id="deleteSelected" type="button" class="danger" disabled>Delete selected</button>
           </div>
         </div>
         <div class="pagination-bar">
