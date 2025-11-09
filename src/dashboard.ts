@@ -32,6 +32,7 @@ type DashboardState = {
   filteredMemories: Memory[];
   totalMemories: number;
   categories: string[];
+  categoryCounts: Record<string, number>;
   activeCategory: string;
   searchTerm: string;
   highlightMemoryId: string | null;
@@ -46,6 +47,7 @@ const state: DashboardState = {
   filteredMemories: [],
   totalMemories: 0,
   categories: [],
+  categoryCounts: {},
   activeCategory: 'all',
   searchTerm: '',
   highlightMemoryId: null,
@@ -265,7 +267,9 @@ async function refreshMemories(showBanner = false): Promise<void> {
     const { memories, total } = await fetchAllMemories(state.auth);
     state.allMemories = memories;
     state.totalMemories = total;
-    state.categories = deriveCategories(memories);
+    const categoryMetadata = deriveCategoryMetadata(memories);
+    state.categories = categoryMetadata.categories;
+    state.categoryCounts = categoryMetadata.counts;
     state.selectedMemoryIds.clear();
     updateCategoryOptions();
     state.currentPage = 1;
@@ -391,6 +395,10 @@ async function deleteMemories(memoryIds: string[]): Promise<void> {
       if (removed > 0) {
         state.totalMemories = Math.max(0, state.totalMemories - removed);
       }
+      const categoryMetadata = deriveCategoryMetadata(state.allMemories);
+      state.categories = categoryMetadata.categories;
+      state.categoryCounts = categoryMetadata.counts;
+      updateCategoryOptions();
       applyFilters({ preservePage: true });
     }
 
@@ -406,16 +414,22 @@ async function deleteMemories(memoryIds: string[]): Promise<void> {
   }
 }
 
-function deriveCategories(memories: Memory[]): string[] {
-  const set = new Set<string>();
+function deriveCategoryMetadata(memories: Memory[]): {
+  categories: string[];
+  counts: Record<string, number>;
+} {
+  const counts: Record<string, number> = {};
   memories.forEach(memory => {
     (memory.categories || []).forEach(cat => {
-      if (cat) {
-        set.add(cat);
+      const trimmed = cat?.trim();
+      if (!trimmed) {
+        return;
       }
+      counts[trimmed] = (counts[trimmed] ?? 0) + 1;
     });
   });
-  return Array.from(set).sort((a, b) => a.localeCompare(b));
+  const categories = Object.keys(counts).sort((a, b) => a.localeCompare(b));
+  return { categories, counts };
 }
 
 function updateCategoryOptions(): void {
@@ -423,17 +437,20 @@ function updateCategoryOptions(): void {
   if (!select) {
     return;
   }
-  const current = state.activeCategory;
+  const current = state.categories.includes(state.activeCategory) ? state.activeCategory : 'all';
+  state.activeCategory = current;
   select.innerHTML = '<option value="all">All categories</option>';
   state.categories.forEach(category => {
     const option = document.createElement('option');
     option.value = category;
-    option.textContent = category;
+    const count = state.categoryCounts[category] ?? 0;
+    option.textContent = count > 0 ? `${category} (${count})` : category;
     if (category === current) {
       option.selected = true;
     }
     select.appendChild(option);
   });
+  select.value = current;
 }
 
 function applyFilters(options?: { preservePage?: boolean }): void {

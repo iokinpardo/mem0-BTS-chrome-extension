@@ -31,6 +31,7 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Dashboard pagination controls:** Navigate large memory sets with page counters, accurate totals, and adjustable per-page views directly in the dashboard
 - **BTS-branded experience:** Lighter BTS styling with refreshed typography and logo treatment throughout the dashboard, sidebar, and sign-in popup
 - **Bulk memory management:** Select multiple memories at once and remove them from BTS in a single action while staying synced with the cloud API
+- **Category-aware filtering:** Review how many memories belong to each category right from the dashboard dropdown to pick the right filter faster
 
 ### Dashboard pagination controls
 - **Feature name:** Dashboard pagination controls
@@ -48,6 +49,12 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Purpose:** Deliver a cohesive, on-brand BTS Me-mory experience across the dashboard, in-page sidebar, and extension popup with bright palettes and updated logos.
 - **Usage example:** Open the BTS Me-mory dashboard, toggle the in-page sidebar, or click the extension icon to view the BTS-styled interfaces featuring the refreshed logo and copy.
 - **Dependencies / breaking changes:** No new dependencies; purely visual update.
+
+### Category-aware filtering
+- **Feature name:** Category-aware filtering
+- **Purpose:** Surface the total number of memories within each category so BTS teams can immediately gauge relevance before switching filters.
+- **Usage example:** Open the **Category** dropdown on the BTS Me-mory dashboard to see options such as `family (15)` or `food (12)` and choose the most helpful category for review.
+- **Dependencies / breaking changes:** No additional dependencies; compatible with existing filtering workflows.
 
 ## Installation
 
