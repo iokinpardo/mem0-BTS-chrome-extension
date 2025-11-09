@@ -25,21 +25,20 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Smart Context Detection:** Automatically captures relevant information from your conversations
 - **Intelligent Memory Retrieval:** Surfaces relevant memories at the right time
 - **One-click sync** with existing ChatGPT memories
-- **Memory dashboard** to manage all memories
+- **Built-in memory dashboard:** Filter, search, and delete memories without leaving the extension
+- **Per-domain capture rules:** Allow or block OpenMemory on specific domains and subdomains directly from the sidebar
 
 ## Installation
 
 > **Note:** Make sure you have [Node.js](https://nodejs.org/) installed before proceeding.
 
-1. Clone this repository.
-2. Navigate to the directory where you cloned the repository.
-3. Run `npm install` to install dependencies.
-4. Run `npm run build` to build the extension.
-5. The built files will be in the `dist` directory.
-6. Open Google Chrome and navigate to `chrome://extensions`.
-7. Enable "Developer mode" in the top right corner.
-8. Click "Load unpacked" and select the `dist` directory containing the extension files.
-9. The Mem0 Chrome Extension should now appear in your Chrome toolbar.
+1. Clone this repository and open the project directory in your terminal.
+2. Install dependencies with `npm install`.
+3. Build the production bundle by running `npm run build` (add `npm run lint:check && npm run type-check` beforehand if you want to verify the codebase).
+4. Confirm that the compiled assets now live in the `dist/` folder.
+5. In Chrome, navigate to `chrome://extensions` and toggle **Developer mode** in the top-right corner.
+6. Click **Load unpacked** and pick the generated `dist/` directory.
+7. Pin the OpenMemory icon in your toolbar, click it, and complete sign-in to start capturing memories.
 
 
 ## Usage
@@ -49,6 +48,8 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 3. Start chatting with any supported AI assistant
 4. For ChatGPT and Perplexity, just press enter while chatting as you would normally
 5. On Claude, click the Mem0 button or use shortcut ^ + M
+6. Open the sidebar settings to configure organization/project, retrieval thresholds, and per-domain allow/block lists
+7. Click **Open Dashboard** in the sidebar to filter, search, and delete memories directly inside Chrome
 
 ## ❤️ Free to Use
 

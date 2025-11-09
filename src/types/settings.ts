@@ -22,6 +22,8 @@ export type SidebarSettings = {
   similarity_threshold: number;
   top_k: number;
   track_searches: boolean;
+  enabled_domains?: string[];
+  disabled_domains?: string[];
 };
 
 /** Legacy settings structure for compatibility */
@@ -33,4 +35,6 @@ export type Settings = {
   orgId: string | null;
   projectId: string | null;
   memoryEnabled: boolean;
+  enabledDomains?: string[];
+  disabledDomains?: string[];
 };

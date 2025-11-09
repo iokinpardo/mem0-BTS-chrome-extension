@@ -12,6 +12,8 @@ export enum StorageKey {
   SIMILARITY_THRESHOLD = 'similarity_threshold',
   TOP_K = 'top_k',
   TRACK_SEARCHES = 'track_searches',
+  ENABLED_DOMAINS = 'enabled_domains',
+  DISABLED_DOMAINS = 'disabled_domains',
 }
 
 /** Type mapping for storage values (required fields) */
@@ -25,6 +27,8 @@ export type StorageItems = {
   selected_project: string;
   similarity_threshold: number;
   top_k: number;
+  enabled_domains: string[];
+  disabled_domains: string[];
 };
 
 /** Type mapping for storage values (optional fields) */
@@ -38,4 +42,6 @@ export type StorageData = Partial<{
   selected_project: string;
   similarity_threshold: number;
   top_k: number;
+  enabled_domains: string[];
+  disabled_domains: string[];
 }>;

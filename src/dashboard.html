@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenMemory Dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg-dark: #0f172a;
+        --bg-card: #111c33;
+        --bg-muted: #1e293b;
+        --border-color: rgba(148, 163, 184, 0.25);
+        --text-primary: #e2e8f0;
+        --text-secondary: #94a3b8;
+        --accent: #7a5bf7;
+        --accent-strong: #5b41d9;
+        --danger: #ef4444;
+        --success: #22c55e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: radial-gradient(circle at top, rgba(79, 70, 229, 0.15), transparent 45%),
+          var(--bg-dark);
+        color: var(--text-primary);
+        min-height: 100vh;
+        padding: 32px;
+      }
+
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .dashboard__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .dashboard__header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .dashboard__header p {
+        margin: 4px 0 0;
+        color: var(--text-secondary);
+      }
+
+      .refresh-button {
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 18px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 10px 25px rgba(122, 91, 247, 0.25);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .refresh-button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 30px rgba(122, 91, 247, 0.35);
+      }
+
+      .refresh-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 12px;
+      }
+
+      .tab-button {
+        flex: 0 0 auto;
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        border-radius: 9999px;
+        padding: 10px 18px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      }
+
+      .tab-button.active {
+        background: rgba(122, 91, 247, 0.15);
+        color: var(--text-primary);
+        border-color: rgba(122, 91, 247, 0.45);
+      }
+
+      .tab-panel {
+        display: none;
+      }
+
+      .tab-panel.active {
+        display: block;
+      }
+
+      .status-banner {
+        padding: 12px 16px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        display: none;
+        font-size: 14px;
+      }
+
+      .status-banner[data-variant='info'] {
+        display: block;
+        background: rgba(122, 91, 247, 0.15);
+        border-color: rgba(122, 91, 247, 0.25);
+        color: var(--text-primary);
+      }
+
+      .status-banner[data-variant='error'] {
+        display: block;
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.25);
+        color: #fecaca;
+      }
+
+      .status-banner[data-variant='success'] {
+        display: block;
+        background: rgba(34, 197, 94, 0.12);
+        border-color: rgba(34, 197, 94, 0.25);
+        color: #bbf7d0;
+      }
+
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      input[type='search'],
+      select {
+        background: var(--bg-muted);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px 14px;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: border 0.2s ease, background 0.2s ease;
+      }
+
+      input[type='search']:focus,
+      select:focus {
+        outline: none;
+        border-color: rgba(122, 91, 247, 0.5);
+        background: rgba(148, 163, 184, 0.1);
+      }
+
+      .count-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 16px;
+        border-radius: 9999px;
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+
+      .memory-list {
+        display: grid;
+        gap: 16px;
+      }
+
+      .memory-card {
+        background: var(--bg-card);
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        border-radius: 16px;
+        padding: 18px 20px;
+        box-shadow: 0 18px 28px rgba(15, 23, 42, 0.35);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: relative;
+      }
+
+      .memory-card--highlight {
+        border-color: rgba(122, 91, 247, 0.6);
+        box-shadow: 0 0 0 2px rgba(122, 91, 247, 0.35);
+      }
+
+      .memory-text {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--text-primary);
+        white-space: pre-wrap;
+      }
+
+      .memory-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
+
+      .memory-categories {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .memory-category {
+        background: rgba(122, 91, 247, 0.18);
+        color: var(--text-primary);
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        text-transform: capitalize;
+      }
+
+      .memory-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .ghost-button {
+        background: transparent;
+        border: 1px solid rgba(239, 68, 68, 0.45);
+        color: #fca5a5;
+        border-radius: 999px;
+        padding: 8px 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .ghost-button:hover:not(:disabled) {
+        background: rgba(239, 68, 68, 0.12);
+        color: #fecaca;
+      }
+
+      .ghost-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .empty-state {
+        padding: 40px;
+        text-align: center;
+        background: var(--bg-card);
+        border-radius: 16px;
+        border: 1px dashed rgba(148, 163, 184, 0.35);
+        color: var(--text-secondary);
+      }
+
+      .settings-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+
+      .settings-card {
+        background: var(--bg-card);
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        box-shadow: 0 12px 22px rgba(15, 23, 42, 0.25);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .settings-card h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .settings-card dl {
+        margin: 0;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 6px 12px;
+        font-size: 14px;
+      }
+
+      .settings-card dt {
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .settings-card dd {
+        margin: 0;
+        color: var(--text-primary);
+        font-weight: 600;
+        word-break: break-word;
+      }
+
+      .domain-list {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--text-primary);
+        font-size: 13px;
+      }
+
+      .muted {
+        color: var(--text-secondary);
+        font-style: italic;
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 20px;
+        }
+
+        .dashboard__header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .tabs {
+          flex-wrap: wrap;
+        }
+
+        .memory-card {
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="dashboard__header">
+        <div>
+          <h1>OpenMemory Dashboard</h1>
+          <p>Review your saved memories and the settings that power them.</p>
+        </div>
+        <button id="refreshMemories" class="refresh-button">Refresh</button>
+      </header>
+
+      <nav class="tabs">
+        <button class="tab-button active" data-target="memories-view">Memories</button>
+        <button class="tab-button" data-target="settings-view">Settings</button>
+      </nav>
+
+      <section id="status" class="status-banner"></section>
+
+      <section id="memories-view" class="tab-panel active">
+        <div class="filters">
+          <div class="filter-group">
+            <label for="searchInput">Search</label>
+            <input id="searchInput" type="search" placeholder="Search memory text" />
+          </div>
+          <div class="filter-group">
+            <label for="categorySelect">Category</label>
+            <select id="categorySelect">
+              <option value="all">All categories</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Visible</label>
+            <div id="memoryCountDisplay" class="count-pill">0</div>
+          </div>
+        </div>
+        <div id="memoryList" class="memory-list"></div>
+      </section>
+
+      <section id="settings-view" class="tab-panel">
+        <div id="settingsCards" class="settings-grid"></div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/dashboard.ts"></script>
+  </body>
+</html>

@@ -5,6 +5,7 @@ import type { MemoryItem, MemorySearchItem, OptionalApiParams } from '../types/m
 import { SidebarAction } from '../types/messages';
 import { type StorageData, StorageKey } from '../types/storage';
 import { createOrchestrator, type SearchStorage } from '../utils/background_search';
+import { isMemoryAllowedForUrl } from '../utils/domain_rules';
 import { OPENMEMORY_PROMPTS } from '../utils/llm_prompts';
 import { SITE_CONFIG } from '../utils/site_config';
 import { getBrowser, sendExtensionEvent } from '../utils/util_functions';
@@ -1259,7 +1260,7 @@ function addSendButtonListener(): void {
 }
 
 // Function to capture and store memory asynchronously
-function captureAndStoreMemory(): void {
+async function captureAndStoreMemory(): Promise<void> {
   // Get the message content
   // id is prompt-textarea
   const inputElement =
@@ -1291,6 +1292,11 @@ function captureAndStoreMemory(): void {
     return;
   }
 
+  const memoryEnabled = await getMemoryEnabledState();
+  if (!memoryEnabled) {
+    return;
+  }
+
   // Asynchronously store the memory
   chrome.storage.sync.get(
     [
@@ -1302,12 +1308,17 @@ function captureAndStoreMemory(): void {
       StorageKey.SELECTED_PROJECT,
       StorageKey.USER_ID,
     ],
-    function (items) {
+    async function (items) {
       // Skip if memory is disabled or no credentials
       if (
         items[StorageKey.MEMORY_ENABLED] === false ||
         (!items[StorageKey.API_KEY] && !items[StorageKey.ACCESS_TOKEN])
       ) {
+        return;
+      }
+
+      const domainAllowed = await isMemoryAllowedForUrl(window.location.href);
+      if (!domainAllowed) {
         return;
       }
 
@@ -1926,15 +1937,15 @@ function hookBackgroundSearchTyping() {
   }
 
   if (inputElement.dataset.mem0BackgroundHooked) {
-    return; 
+    return;
   }
 
-  inputElement.dataset.mem0BackgroundHooked = 'true'; 
+  inputElement.dataset.mem0BackgroundHooked = 'true';
 
   if (!chatgptBackgroundSearchHandler) {
     chatgptBackgroundSearchHandler = function () {
       const text = getInputValue() || '';
-      console.log("Background search for:", text); 
+      console.log('Background search for:', text);
       chatgptSearch.setText(text);
     };
   }
@@ -2281,10 +2292,14 @@ function sendMemoryToMem0(
 }
 
 // Add this new function to get the memory_enabled state
-function getMemoryEnabledState(): Promise<boolean> {
-  return new Promise<boolean>(resolve => {
+async function getMemoryEnabledState(): Promise<boolean> {
+  const allowed = await isMemoryAllowedForUrl(window.location.href);
+  if (!allowed) {
+    return false;
+  }
+  return await new Promise<boolean>(resolve => {
     chrome.storage.sync.get([StorageKey.MEMORY_ENABLED], function (result) {
-      resolve(result.memory_enabled !== false); // Default to true if not set
+      resolve(result[StorageKey.MEMORY_ENABLED] !== false);
     });
   });
 }

@@ -71,7 +71,8 @@ export type ToggleMem0Message = {
 
 export type OpenDashboardMessage = {
   action: SidebarAction.OPEN_DASHBOARD;
-  url: string;
+  memoryId?: string;
+  view?: 'memories' | 'settings';
 };
 
 export type SidebarActionMessage =

@@ -220,6 +220,30 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     `;
     settingsTabContent.appendChild(trackSearchSection);
 
+    const domainControlSection = document.createElement('div');
+    domainControlSection.className = 'section';
+    domainControlSection.innerHTML = `
+      <div class="section-header">
+        <h2 class="section-title">Domain controls</h2>
+      </div>
+      <p class="section-description">Choose where OpenMemory captures data.</p>
+      <label class="section-subtitle" for="domainAllowlist">Only allow on these domains (optional)</label>
+      <textarea
+        id="domainAllowlist"
+        class="settings-textarea"
+        placeholder="example.com&#10;app.example.com"
+      ></textarea>
+      <p class="section-helper">Leave empty to allow all domains.</p>
+      <label class="section-subtitle" for="domainBlocklist">Disable on these domains</label>
+      <textarea
+        id="domainBlocklist"
+        class="settings-textarea"
+        placeholder="private.example.com"
+      ></textarea>
+      <p class="section-helper">One domain or subdomain per line.</p>
+    `;
+    settingsTabContent.appendChild(domainControlSection);
+
     // Add user ID input section
     const userIdSection = document.createElement('div');
     userIdSection.className = 'section';
@@ -349,6 +373,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         StorageKey.SIMILARITY_THRESHOLD,
         StorageKey.TOP_K,
         StorageKey.TRACK_SEARCHES,
+        StorageKey.ENABLED_DOMAINS,
+        StorageKey.DISABLED_DOMAINS,
       ],
       function (result) {
         const toggleCheckbox = memoryToggleSection.querySelector('#mem0Toggle') as HTMLInputElement;
@@ -401,6 +427,37 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         if (topKInput) {
           topKInput.value = String(topK);
         }
+
+        const domainAllowTextarea = domainControlSection.querySelector(
+          '#domainAllowlist'
+        ) as HTMLTextAreaElement;
+        const domainBlockTextarea = domainControlSection.querySelector(
+          '#domainBlocklist'
+        ) as HTMLTextAreaElement;
+
+        const allowedDomains = Array.isArray(result[StorageKey.ENABLED_DOMAINS])
+          ? (result[StorageKey.ENABLED_DOMAINS] as string[])
+          : typeof result[StorageKey.ENABLED_DOMAINS] === 'string'
+            ? (result[StorageKey.ENABLED_DOMAINS] as string).split(/\r?\n|,/)
+            : [];
+        const blockedDomains = Array.isArray(result[StorageKey.DISABLED_DOMAINS])
+          ? (result[StorageKey.DISABLED_DOMAINS] as string[])
+          : typeof result[StorageKey.DISABLED_DOMAINS] === 'string'
+            ? (result[StorageKey.DISABLED_DOMAINS] as string).split(/\r?\n|,/)
+            : [];
+
+        if (domainAllowTextarea) {
+          domainAllowTextarea.value = allowedDomains
+            .map(d => d.trim())
+            .filter(Boolean)
+            .join('\n');
+        }
+        if (domainBlockTextarea) {
+          domainBlockTextarea.value = blockedDomains
+            .map(d => d.trim())
+            .filter(Boolean)
+            .join('\n');
+        }
       }
     );
 
@@ -419,7 +476,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
       saveSection,
       memoryCountContainer,
       footerToggle,
-      trackSearchSection
+      trackSearchSection,
+      domainControlSection
     );
 
     document.body.appendChild(sidebarContainer);
@@ -454,7 +512,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     autoInjectSection: HTMLElement,
     thresholdSection: HTMLElement,
     topKSection: HTMLElement,
-    trackSearchSection: HTMLElement
+    trackSearchSection: HTMLElement,
+    domainControlSection: HTMLElement
   ): void {
     // Show loading state
     saveBtn.disabled = true;
@@ -475,6 +534,12 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     const trackSearchesCheckbox = trackSearchSection.querySelector(
       '#trackSearchesToggle'
     ) as HTMLInputElement;
+    const domainAllowTextarea = domainControlSection.querySelector(
+      '#domainAllowlist'
+    ) as HTMLTextAreaElement;
+    const domainBlockTextarea = domainControlSection.querySelector(
+      '#domainBlocklist'
+    ) as HTMLTextAreaElement;
 
     const userId = (userIdInput?.value || '').trim();
     const selectedOrgId = orgSelect?.value || '';
@@ -485,6 +550,14 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     const autoInjectEnabled = Boolean(autoInjectCheckbox?.checked);
     const similarityThreshold = parseFloat(thresholdSlider?.value || '0.3');
     const topK = parseInt(topKInput?.value || '10', 10);
+    const enabledDomains = (domainAllowTextarea?.value || '')
+      .split(/\r?\n/)
+      .map(domain => domain.trim())
+      .filter(Boolean);
+    const disabledDomains = (domainBlockTextarea?.value || '')
+      .split(/\r?\n/)
+      .map(domain => domain.trim())
+      .filter(Boolean);
 
     // Prepare settings object
     const settings: SidebarSettings = {
@@ -498,6 +571,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
       similarity_threshold: similarityThreshold,
       top_k: topK,
       track_searches: Boolean(trackSearchesCheckbox?.checked),
+      enabled_domains: enabledDomains.length ? enabledDomains : undefined,
+      disabled_domains: disabledDomains.length ? disabledDomains : undefined,
     };
 
     // Remove undefined values
@@ -562,7 +637,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     saveSection: HTMLElement,
     memoryCountContainer: HTMLElement,
     footerToggle: HTMLElement,
-    trackSearchSection: HTMLElement
+    trackSearchSection: HTMLElement,
+    domainControlSection: HTMLElement
   ): void {
     // Close button
     const closeBtn = sidebarContainer.querySelector('#closeBtn') as HTMLButtonElement;
@@ -624,7 +700,7 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     userDashboardBtn?.addEventListener('click', function () {
       chrome.runtime.sendMessage({
         action: SidebarAction.OPEN_DASHBOARD,
-        url: 'https://app.mem0.ai/dashboard/users',
+        view: 'settings',
       });
     });
 
@@ -671,7 +747,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         autoInjectSection,
         thresholdSection,
         topKSection,
-        trackSearchSection
+        trackSearchSection,
+        domainControlSection
       );
     });
   }
@@ -1350,6 +1427,20 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           margin-top: 16px;
         }
         
+        .section-subtitle {
+          display: block;
+          margin-bottom: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--text-white);
+        }
+
+        .section-helper {
+          margin: 4px 0 12px;
+          font-size: 12px;
+          color: var(--text-gray);
+        }
+
         .settings-input, .settings-select {
           width: 100%;
           padding: 12px 16px;
@@ -1371,6 +1462,26 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         
         .settings-input::placeholder {
           color: var(--text-gray);
+        }
+
+        .settings-textarea {
+          width: 100%;
+          min-height: 90px;
+          padding: 12px 16px;
+          background: var(--bg-card);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          color: var(--text-white);
+          font-size: 13px;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          resize: vertical;
+          box-sizing: border-box;
+        }
+
+        .settings-textarea:focus {
+          outline: none;
+          border-color: var(--purple);
+          background: var(--bg-button);
         }
         
         .settings-select option {
@@ -1580,11 +1691,9 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
   }
 
   function openDashboard() {
-    chrome.storage.sync.get([StorageKey.USER_ID], function () {
-      chrome.runtime.sendMessage({
-        action: SidebarAction.OPEN_DASHBOARD,
-        url: `https://app.mem0.ai/dashboard/requests`,
-      });
+    chrome.runtime.sendMessage({
+      action: SidebarAction.OPEN_DASHBOARD,
+      view: 'memories',
     });
   }
 
@@ -1673,12 +1782,10 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         e.stopPropagation();
         const memoryId = this.getAttribute('data-id');
         if (memoryId) {
-          chrome.storage.sync.get([StorageKey.USER_ID], function (data) {
-            const userId = data.user_id || 'chrome-extension-user';
-            chrome.runtime.sendMessage({
-              action: SidebarAction.OPEN_DASHBOARD,
-              url: `https://app.mem0.ai/dashboard/user/${userId}?memoryId=${memoryId}`,
-            });
+          chrome.runtime.sendMessage({
+            action: SidebarAction.OPEN_DASHBOARD,
+            memoryId,
+            view: 'memories',
           });
         }
       });

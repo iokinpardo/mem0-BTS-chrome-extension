@@ -2,6 +2,7 @@ import { DEFAULT_USER_ID } from './types/api';
 import type { HistoryStateData, HistoryUrl } from './types/browser';
 import type { Settings } from './types/settings';
 import { StorageKey } from './types/storage';
+import { isMemoryAllowedForUrl } from './utils/domain_rules';
 
 (function () {
   // Utilities
@@ -35,9 +36,14 @@ import { StorageKey } from './types/storage';
     });
   }
 
-  function maybeSend(engine: string, query: string): void {
+  async function maybeSend(engine: string, query: string): Promise<void> {
     const q = normalize(query);
     if (!q || q.length < 2) {
+      return;
+    }
+
+    const allowed = await isMemoryAllowedForUrl(window.location.href);
+    if (!allowed) {
       return;
     }
 
