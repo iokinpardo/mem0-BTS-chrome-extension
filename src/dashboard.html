@@ -164,20 +164,34 @@
 
       input[type='search'],
       select {
-        background: var(--bg-muted);
-        border: 1px solid var(--border-color);
+        appearance: none;
+        background: var(--bg-card);
+        border: 1px solid rgba(148, 163, 184, 0.35);
         border-radius: 10px;
         padding: 12px 14px;
         color: var(--text-primary);
         font-size: 14px;
-        transition: border 0.2s ease, background 0.2s ease;
+        transition: border 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.35);
+      }
+
+      select {
+        padding-right: 42px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 16 16'%3E%3Cpath fill='%23cbd5f5' d='M4.47 6.97a.75.75 0 0 1 1.06 0L8 9.44l2.47-2.47a.75.75 0 1 1 1.06 1.06L8.53 10.53a1.5 1.5 0 0 1-2.12 0L4.47 8.03a.75.75 0 0 1 0-1.06Z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
       }
 
       input[type='search']:focus,
       select:focus {
         outline: none;
-        border-color: rgba(122, 91, 247, 0.5);
-        background: rgba(148, 163, 184, 0.1);
+        border-color: rgba(122, 91, 247, 0.55);
+        box-shadow: 0 12px 26px rgba(122, 91, 247, 0.18);
+      }
+
+      select option {
+        background: var(--bg-dark);
+        color: var(--text-primary);
       }
 
       .count-pill {
@@ -185,11 +199,49 @@
         align-items: center;
         justify-content: center;
         min-height: 40px;
-        padding: 0 16px;
+        padding: 0 18px;
         border-radius: 9999px;
-        background: rgba(148, 163, 184, 0.12);
+        background: rgba(148, 163, 184, 0.15);
         color: var(--text-primary);
         font-weight: 600;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.35);
+      }
+
+      .pagination-bar {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 12px;
+        margin: 4px 0 20px;
+      }
+
+      .pagination-button {
+        background: transparent;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        color: var(--text-primary);
+        border-radius: 999px;
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      }
+
+      .pagination-button:hover:not(:disabled) {
+        background: rgba(122, 91, 247, 0.16);
+        border-color: rgba(122, 91, 247, 0.45);
+        color: var(--text-primary);
+      }
+
+      .pagination-button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .pagination-status {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
       }
 
       .memory-list {
@@ -386,9 +438,18 @@
             </select>
           </div>
           <div class="filter-group">
-            <label>Visible</label>
+            <label for="pageSizeSelect">Page size</label>
+            <select id="pageSizeSelect"></select>
+          </div>
+          <div class="filter-group">
+            <label>Showing</label>
             <div id="memoryCountDisplay" class="count-pill">0</div>
           </div>
+        </div>
+        <div class="pagination-bar">
+          <button id="prevPage" class="pagination-button" type="button">Previous</button>
+          <span id="pageDisplay" class="pagination-status">Page 0 of 0</span>
+          <button id="nextPage" class="pagination-button" type="button">Next</button>
         </div>
         <div id="memoryList" class="memory-list"></div>
       </section>

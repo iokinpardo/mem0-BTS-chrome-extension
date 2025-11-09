@@ -28,6 +28,12 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Built-in memory dashboard:** Filter, search, and delete memories without leaving the extension
 - **Per-domain capture rules:** Allow or block OpenMemory on specific domains and subdomains directly from the sidebar
 - **Dashboard build integration:** Production builds now bundle the dashboard script so the Memories and Settings tabs load correctly from the `dist/` package after `npm run build`
+- **Dashboard pagination controls:** Navigate large memory sets with page counters, accurate totals, and adjustable per-page views directly in the dashboard
+
+### Dashboard pagination controls
+- **Feature name:** Dashboard pagination controls
+- **Purpose:** Keep the dashboard responsive while browsing large memory collections by navigating with clear page indicators and totals.
+- **Usage example:** Open the dashboard from the sidebar, adjust the **Page size** dropdown to 50 to show more items at once, and use the **Previous/Next** buttons to move between pages.
 
 ## Installation
 
