@@ -27,6 +27,7 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **One-click sync** with existing ChatGPT memories
 - **Built-in memory dashboard:** Filter, search, and delete memories without leaving the extension
 - **Per-domain capture rules:** Allow or block OpenMemory on specific domains and subdomains directly from the sidebar
+- **Dashboard build integration:** Production builds now bundle the dashboard script so the Memories and Settings tabs load correctly from the `dist/` package after `npm run build`
 
 ## Installation
 
