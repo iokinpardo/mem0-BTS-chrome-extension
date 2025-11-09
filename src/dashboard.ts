@@ -528,7 +528,9 @@ function renderMemoryList(): void {
     const memoryText = document.createElement('p');
     memoryText.className = 'memory-text';
     memoryText.innerHTML = escapeHtml(memory.memory || '');
-    card.appendChild(memoryText);
+
+    const primaryRow = document.createElement('div');
+    primaryRow.className = 'memory-main';
 
     if (memory.id) {
       const checkbox = document.createElement('input');
@@ -539,8 +541,11 @@ function renderMemoryList(): void {
         const checked = (event.currentTarget as HTMLInputElement).checked;
         toggleMemorySelection(memory.id ?? '', checked);
       });
-      card.insertBefore(checkbox, memoryText);
+      primaryRow.appendChild(checkbox);
     }
+
+    primaryRow.appendChild(memoryText);
+    card.appendChild(primaryRow);
 
     const meta = document.createElement('div');
     meta.className = 'memory-meta';

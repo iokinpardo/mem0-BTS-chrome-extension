@@ -29,7 +29,7 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Per-domain capture rules:** Allow or block OpenMemory on specific domains and subdomains directly from the sidebar
 - **Dashboard build integration:** Production builds now bundle the dashboard script so the Memories and Settings tabs load correctly from the `dist/` package after `npm run build`
 - **Dashboard pagination controls:** Navigate large memory sets with page counters, accurate totals, and adjustable per-page views directly in the dashboard
-- **BTS-branded experience:** Lighter BTS styling with refreshed typography and logo treatment throughout the dashboard
+- **BTS-branded experience:** Lighter BTS styling with refreshed typography and logo treatment throughout the dashboard and sign-in popup
 - **Bulk memory management:** Select multiple memories at once and remove them from BTS in a single action while staying synced with the cloud API
 
 ### Dashboard pagination controls
@@ -42,6 +42,12 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Purpose:** Speed up moderation by selecting several memories at once and permanently deleting them from BTS in one streamlined action.
 - **Usage example:** From the BTS Me-mory dashboard, select a few rows (or click **Select page**) and press **Delete selected** to remove them from both the dashboard and the hosted BTS memory store.
 - **Dependencies / breaking changes:** Requires an authenticated session; no breaking changes.
+
+### BTS interface refresh
+- **Feature name:** BTS interface refresh
+- **Purpose:** Deliver a cohesive, on-brand BTS Me-mory experience across the dashboard and the extension popup with bright palettes and updated logos.
+- **Usage example:** Open the BTS Me-mory dashboard or click the extension icon to view the BTS-styled sign-in card featuring the refreshed logo and copy.
+- **Dependencies / breaking changes:** No new dependencies; purely visual update.
 
 ## Installation
 
