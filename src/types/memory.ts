@@ -22,6 +22,8 @@ export type MemorySearchItem = { id: string | number; memory: string; categories
 /** API response wrapper for memories */
 export type MemoriesResponse = Partial<{
   count: number;
+  next: string | null;
+  previous: string | null;
   results: Memory[];
 }>;
 

@@ -4,6 +4,9 @@ import { StorageKey } from './types/storage';
 import { getDomainRuleLists } from './utils/domain_rules';
 
 const MEMORIES_ENDPOINT = 'https://api.mem0.ai/v1/memories/';
+const API_PAGE_SIZE = 200;
+const PAGE_SIZE_OPTIONS = [25, 50, 100];
+const DEFAULT_PAGE_SIZE = PAGE_SIZE_OPTIONS[0];
 
 type AuthContext = {
   headers: Record<string, string>;
@@ -27,20 +30,30 @@ type DashboardState = {
   auth: AuthContext | null;
   allMemories: Memory[];
   filteredMemories: Memory[];
+  totalMemories: number;
   categories: string[];
+  categoryCounts: Record<string, number>;
   activeCategory: string;
   searchTerm: string;
   highlightMemoryId: string | null;
+  pageSize: number;
+  currentPage: number;
+  selectedMemoryIds: Set<string>;
 };
 
 const state: DashboardState = {
   auth: null,
   allMemories: [],
   filteredMemories: [],
+  totalMemories: 0,
   categories: [],
+  categoryCounts: {},
   activeCategory: 'all',
   searchTerm: '',
   highlightMemoryId: null,
+  pageSize: DEFAULT_PAGE_SIZE,
+  currentPage: 1,
+  selectedMemoryIds: new Set(),
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -80,6 +93,8 @@ async function initializeDashboard(): Promise<void> {
   state.highlightMemoryId = params.get('memoryId');
 
   attachFilterListeners();
+  attachPaginationListeners();
+  attachSelectionListeners();
   attachRefreshListener();
 
   await loadAuthContext();
@@ -108,6 +123,87 @@ function attachFilterListeners(): void {
     state.activeCategory = (event.currentTarget as HTMLSelectElement).value || 'all';
     applyFilters();
   });
+}
+
+function attachPaginationListeners(): void {
+  const pageSizeSelect = document.getElementById('pageSizeSelect') as HTMLSelectElement | null;
+  const previousButton = document.getElementById('prevPage') as HTMLButtonElement | null;
+  const nextButton = document.getElementById('nextPage') as HTMLButtonElement | null;
+
+  if (pageSizeSelect) {
+    pageSizeSelect.innerHTML = '';
+    PAGE_SIZE_OPTIONS.forEach(size => {
+      const option = document.createElement('option');
+      option.value = String(size);
+      option.textContent = `${size} per page`;
+      if (size === state.pageSize) {
+        option.selected = true;
+      }
+      pageSizeSelect.appendChild(option);
+    });
+
+    pageSizeSelect.value = String(state.pageSize);
+
+    pageSizeSelect.addEventListener('change', event => {
+      const value = parseInt((event.currentTarget as HTMLSelectElement).value, 10);
+      state.pageSize = Number.isFinite(value) && value > 0 ? value : DEFAULT_PAGE_SIZE;
+      state.currentPage = 1;
+      renderMemoryList();
+      updateCounts();
+    });
+  }
+
+  previousButton?.addEventListener('click', () => {
+    changePage(state.currentPage - 1);
+  });
+
+  nextButton?.addEventListener('click', () => {
+    changePage(state.currentPage + 1);
+  });
+}
+
+function attachSelectionListeners(): void {
+  const selectPageButton = document.getElementById('selectPage') as HTMLButtonElement | null;
+  const clearSelectionButton = document.getElementById('clearSelection') as HTMLButtonElement | null;
+  const deleteSelectedButton = document.getElementById('deleteSelected') as HTMLButtonElement | null;
+
+  selectPageButton?.addEventListener('click', () => {
+    const pageMemories = getCurrentPageMemories();
+    pageMemories.forEach(memory => {
+      if (memory.id) {
+        state.selectedMemoryIds.add(memory.id);
+      }
+    });
+    renderMemoryList();
+    updateSelectionBar();
+  });
+
+  clearSelectionButton?.addEventListener('click', () => {
+    state.selectedMemoryIds.clear();
+    renderMemoryList();
+    updateSelectionBar();
+  });
+
+  deleteSelectedButton?.addEventListener('click', () => {
+    void handleBulkDelete();
+  });
+}
+
+function changePage(targetPage: number): void {
+  const filteredTotal = state.filteredMemories.length;
+  if (filteredTotal === 0) {
+    return;
+  }
+  const totalPages = Math.max(1, Math.ceil(filteredTotal / state.pageSize));
+  const clamped = Math.min(Math.max(targetPage, 1), totalPages);
+  if (clamped === state.currentPage) {
+    return;
+  }
+  state.currentPage = clamped;
+  renderMemoryList();
+  updateCounts();
+  const list = document.getElementById('memories-view');
+  list?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function attachRefreshListener(): void {
@@ -168,10 +264,15 @@ async function refreshMemories(showBanner = false): Promise<void> {
     showStatus('Refreshing memories…', 'info');
   }
   try {
-    const memories = await fetchMemories(state.auth);
+    const { memories, total } = await fetchAllMemories(state.auth);
     state.allMemories = memories;
-    state.categories = deriveCategories(memories);
+    state.totalMemories = total;
+    const categoryMetadata = deriveCategoryMetadata(memories);
+    state.categories = categoryMetadata.categories;
+    state.categoryCounts = categoryMetadata.counts;
+    state.selectedMemoryIds.clear();
     updateCategoryOptions();
+    state.currentPage = 1;
     applyFilters();
     if (showBanner) {
       showStatus('Memories updated.', 'success');
@@ -181,8 +282,11 @@ async function refreshMemories(showBanner = false): Promise<void> {
     showStatus('Unable to load memories. Please try again.', 'error');
     state.allMemories = [];
     state.filteredMemories = [];
+    state.totalMemories = 0;
+    state.selectedMemoryIds.clear();
     renderMemoryList();
     updateCounts();
+    updateSelectionBar();
   } finally {
     if (refreshButton) {
       refreshButton.disabled = false;
@@ -195,31 +299,59 @@ async function refreshSettings(): Promise<void> {
   renderSettingsCards(snapshot);
 }
 
-async function fetchMemories(auth: AuthContext): Promise<Memory[]> {
-  const params = new URLSearchParams({
-    user_id: auth.userId,
-    page: '1',
-    page_size: '100',
-  });
-  if (auth.orgId) {
-    params.append('org_id', auth.orgId);
+async function fetchAllMemories(auth: AuthContext): Promise<{ memories: Memory[]; total: number }> {
+  const collected: Memory[] = [];
+  let total = 0;
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const params = new URLSearchParams({
+      user_id: auth.userId,
+      page: String(page),
+      page_size: String(API_PAGE_SIZE),
+    });
+    if (auth.orgId) {
+      params.append('org_id', auth.orgId);
+    }
+    if (auth.projectId) {
+      params.append('project_id', auth.projectId);
+    }
+
+    const response = await fetch(`${MEMORIES_ENDPOINT}?${params.toString()}`, {
+      method: 'GET',
+      headers: auth.headers,
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch memories (${response.status})`);
+    }
+
+    const data = (await response.json()) as MemoriesResponse;
+    const results = data.results ?? [];
+    collected.push(...results);
+    total = data.count ?? collected.length;
+
+    if (!data.next || results.length < API_PAGE_SIZE) {
+      hasMore = false;
+    } else {
+      page += 1;
+    }
   }
-  if (auth.projectId) {
-    params.append('project_id', auth.projectId);
-  }
-  const response = await fetch(`${MEMORIES_ENDPOINT}?${params.toString()}`, {
-    method: 'GET',
-    headers: auth.headers,
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch memories (${response.status})`);
-  }
-  const data = (await response.json()) as MemoriesResponse;
-  return data.results ?? [];
+
+  return { memories: collected, total };
 }
 
 async function deleteMemory(auth: AuthContext, memoryId: string): Promise<void> {
-  const response = await fetch(`${MEMORIES_ENDPOINT}${memoryId}/`, {
+  const url = new URL(`${MEMORIES_ENDPOINT}${memoryId}/`);
+  url.searchParams.set('user_id', auth.userId);
+  if (auth.orgId) {
+    url.searchParams.set('org_id', auth.orgId);
+  }
+  if (auth.projectId) {
+    url.searchParams.set('project_id', auth.projectId);
+  }
+
+  const response = await fetch(url.toString(), {
     method: 'DELETE',
     headers: auth.headers,
   });
@@ -228,16 +360,76 @@ async function deleteMemory(auth: AuthContext, memoryId: string): Promise<void> 
   }
 }
 
-function deriveCategories(memories: Memory[]): string[] {
-  const set = new Set<string>();
+async function deleteMemories(memoryIds: string[]): Promise<void> {
+  const auth = state.auth;
+  if (!auth || memoryIds.length === 0) {
+    return;
+  }
+
+  showStatus(
+    memoryIds.length === 1 ? 'Deleting memory…' : `Deleting ${memoryIds.length} memories…`,
+    'info'
+  );
+
+  try {
+    const normalizedIds = memoryIds.filter((id): id is string => typeof id === 'string' && id.length > 0);
+    if (normalizedIds.length === 0) {
+      showStatus('No memories selected for deletion.', 'info');
+      return;
+    }
+    for (const id of normalizedIds) {
+      await deleteMemory(auth, id);
+      state.selectedMemoryIds.delete(id);
+    }
+
+    if (normalizedIds.length > 0) {
+      const deletedSet = new Set(normalizedIds);
+      const beforeCount = state.allMemories.length;
+      state.allMemories = state.allMemories.filter(memory => {
+        if (!memory.id) {
+          return true;
+        }
+        return !deletedSet.has(memory.id);
+      });
+      const removed = beforeCount - state.allMemories.length;
+      if (removed > 0) {
+        state.totalMemories = Math.max(0, state.totalMemories - removed);
+      }
+      const categoryMetadata = deriveCategoryMetadata(state.allMemories);
+      state.categories = categoryMetadata.categories;
+      state.categoryCounts = categoryMetadata.counts;
+      updateCategoryOptions();
+      applyFilters({ preservePage: true });
+    }
+
+    showStatus(
+      normalizedIds.length === 1
+        ? 'Memory deleted successfully.'
+        : `${normalizedIds.length} memories deleted successfully.`,
+      'success'
+    );
+  } catch (error) {
+    console.error('Failed to delete memories', error);
+    throw error;
+  }
+}
+
+function deriveCategoryMetadata(memories: Memory[]): {
+  categories: string[];
+  counts: Record<string, number>;
+} {
+  const counts: Record<string, number> = {};
   memories.forEach(memory => {
     (memory.categories || []).forEach(cat => {
-      if (cat) {
-        set.add(cat);
+      const trimmed = cat?.trim();
+      if (!trimmed) {
+        return;
       }
+      counts[trimmed] = (counts[trimmed] ?? 0) + 1;
     });
   });
-  return Array.from(set).sort((a, b) => a.localeCompare(b));
+  const categories = Object.keys(counts).sort((a, b) => a.localeCompare(b));
+  return { categories, counts };
 }
 
 function updateCategoryOptions(): void {
@@ -245,20 +437,24 @@ function updateCategoryOptions(): void {
   if (!select) {
     return;
   }
-  const current = state.activeCategory;
+  const current = state.categories.includes(state.activeCategory) ? state.activeCategory : 'all';
+  state.activeCategory = current;
   select.innerHTML = '<option value="all">All categories</option>';
   state.categories.forEach(category => {
     const option = document.createElement('option');
     option.value = category;
-    option.textContent = category;
+    const count = state.categoryCounts[category] ?? 0;
+    option.textContent = count > 0 ? `${category} (${count})` : category;
     if (category === current) {
       option.selected = true;
     }
     select.appendChild(option);
   });
+  select.value = current;
 }
 
-function applyFilters(): void {
+function applyFilters(options?: { preservePage?: boolean }): void {
+  const preservePage = options?.preservePage ?? false;
   const searchTerm = state.searchTerm;
   const category = state.activeCategory;
   state.filteredMemories = state.allMemories.filter(memory => {
@@ -273,8 +469,48 @@ function applyFilters(): void {
     const categories = memory.categories || [];
     return categories.some(cat => cat.toLowerCase() === category.toLowerCase());
   });
+  if (!preservePage) {
+    state.currentPage = 1;
+  }
+
+  if (state.highlightMemoryId) {
+    const index = state.filteredMemories.findIndex(memory => memory.id === state.highlightMemoryId);
+    if (index >= 0) {
+      state.currentPage = Math.floor(index / state.pageSize) + 1;
+    }
+  }
+
+  const validIds = new Set(
+    state.allMemories
+      .map(memory => memory.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+  );
+  Array.from(state.selectedMemoryIds).forEach(id => {
+    if (!validIds.has(id)) {
+      state.selectedMemoryIds.delete(id);
+    }
+  });
+
+  const totalPages = Math.max(1, Math.ceil(state.filteredMemories.length / state.pageSize));
+  if (state.filteredMemories.length === 0) {
+    state.currentPage = 1;
+  } else if (state.currentPage > totalPages) {
+    state.currentPage = totalPages;
+  } else if (state.currentPage < 1) {
+    state.currentPage = 1;
+  }
+
   renderMemoryList();
   updateCounts();
+  updateSelectionBar();
+}
+
+function getCurrentPageMemories(): Memory[] {
+  if (state.filteredMemories.length === 0) {
+    return [];
+  }
+  const startIndex = (state.currentPage - 1) * state.pageSize;
+  return state.filteredMemories.slice(startIndex, startIndex + state.pageSize);
 }
 
 function renderMemoryList(): void {
@@ -293,7 +529,9 @@ function renderMemoryList(): void {
     return;
   }
 
-  state.filteredMemories.forEach(memory => {
+  const pageMemories = getCurrentPageMemories();
+
+  pageMemories.forEach(memory => {
     const card = document.createElement('article');
     card.className = 'memory-card';
     if (state.highlightMemoryId && memory.id === state.highlightMemoryId) {
@@ -307,7 +545,24 @@ function renderMemoryList(): void {
     const memoryText = document.createElement('p');
     memoryText.className = 'memory-text';
     memoryText.innerHTML = escapeHtml(memory.memory || '');
-    card.appendChild(memoryText);
+
+    const primaryRow = document.createElement('div');
+    primaryRow.className = 'memory-main';
+
+    if (memory.id) {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'memory-select';
+      checkbox.checked = state.selectedMemoryIds.has(memory.id);
+      checkbox.addEventListener('change', event => {
+        const checked = (event.currentTarget as HTMLInputElement).checked;
+        toggleMemorySelection(memory.id ?? '', checked);
+      });
+      primaryRow.appendChild(checkbox);
+    }
+
+    primaryRow.appendChild(memoryText);
+    card.appendChild(primaryRow);
 
     const meta = document.createElement('div');
     meta.className = 'memory-meta';
@@ -352,16 +607,102 @@ function renderMemoryList(): void {
 
     container.appendChild(card);
   });
+
+  updateSelectionBar();
 }
 
 function updateCounts(): void {
   const countDisplay = document.getElementById('memoryCountDisplay');
-  if (!countDisplay) {
+  const pageDisplay = document.getElementById('pageDisplay');
+  const previousButton = document.getElementById('prevPage') as HTMLButtonElement | null;
+  const nextButton = document.getElementById('nextPage') as HTMLButtonElement | null;
+
+  if (!countDisplay || !pageDisplay) {
     return;
   }
-  const visible = state.filteredMemories.length;
-  const total = state.allMemories.length;
-  countDisplay.textContent = `${visible} / ${total}`;
+
+  const filteredTotal = state.filteredMemories.length;
+  const overallTotal = state.totalMemories || state.allMemories.length;
+  const totalPages = filteredTotal > 0 ? Math.ceil(filteredTotal / state.pageSize) : 1;
+  const currentPage = filteredTotal > 0 ? state.currentPage : 1;
+  const start = filteredTotal === 0 ? 0 : (state.currentPage - 1) * state.pageSize + 1;
+  const end = filteredTotal === 0 ? 0 : Math.min(start + state.pageSize - 1, filteredTotal);
+
+  if (filteredTotal === 0) {
+    countDisplay.textContent = `0 of ${overallTotal}`;
+    pageDisplay.textContent = 'Page 0 of 0';
+  } else {
+    if (filteredTotal === overallTotal) {
+      countDisplay.textContent = `${start}–${end} of ${overallTotal}`;
+    } else {
+      countDisplay.textContent = `${start}–${end} of ${filteredTotal} (total ${overallTotal})`;
+    }
+    pageDisplay.textContent = `Page ${currentPage} of ${totalPages}`;
+  }
+
+  if (previousButton) {
+    previousButton.disabled = filteredTotal === 0 || state.currentPage <= 1;
+  }
+  if (nextButton) {
+    nextButton.disabled = filteredTotal === 0 || state.currentPage >= totalPages;
+  }
+}
+
+function toggleMemorySelection(memoryId: string, selected: boolean): void {
+  if (!memoryId) {
+    return;
+  }
+  if (selected) {
+    state.selectedMemoryIds.add(memoryId);
+  } else {
+    state.selectedMemoryIds.delete(memoryId);
+  }
+  updateSelectionBar();
+}
+
+function updateSelectionBar(): void {
+  const selectedCount = state.selectedMemoryIds.size;
+  const selectionSummary = document.getElementById('selectionSummary');
+  const selectedCountElement = document.getElementById('selectedCount');
+  const deleteSelectedButton = document.getElementById('deleteSelected') as HTMLButtonElement | null;
+  const clearSelectionButton = document.getElementById('clearSelection') as HTMLButtonElement | null;
+  const selectPageButton = document.getElementById('selectPage') as HTMLButtonElement | null;
+  const selectionBar = document.getElementById('selectionBar');
+
+  if (selectedCountElement) {
+    selectedCountElement.textContent = String(selectedCount);
+  }
+  if (selectionSummary) {
+    selectionSummary.textContent =
+      selectedCount === 0
+        ? 'No memories selected'
+        : `${selectedCount} ${selectedCount === 1 ? 'memory' : 'memories'} selected`;
+  }
+
+  const pageMemories = getCurrentPageMemories();
+  const hasPageMemories = pageMemories.length > 0;
+  const allSelectedOnPage = hasPageMemories
+    ? pageMemories.every(memory => memory.id && state.selectedMemoryIds.has(memory.id))
+    : false;
+
+  if (selectPageButton) {
+    selectPageButton.disabled = !hasPageMemories || allSelectedOnPage;
+    selectPageButton.textContent = hasPageMemories
+      ? allSelectedOnPage
+        ? 'All on page selected'
+        : `Select page (${pageMemories.length})`
+      : 'Select page';
+  }
+
+  if (clearSelectionButton) {
+    clearSelectionButton.disabled = selectedCount === 0;
+  }
+  if (deleteSelectedButton) {
+    deleteSelectedButton.disabled = selectedCount === 0;
+  }
+  if (selectionBar) {
+    selectionBar.dataset.active = selectedCount > 0 ? 'true' : 'false';
+  }
 }
 
 async function handleDeleteMemory(memoryId: string, button: HTMLButtonElement): Promise<void> {
@@ -372,10 +713,7 @@ async function handleDeleteMemory(memoryId: string, button: HTMLButtonElement): 
   button.disabled = true;
   button.textContent = 'Deleting…';
   try {
-    await deleteMemory(state.auth, memoryId);
-    state.allMemories = state.allMemories.filter(memory => memory.id !== memoryId);
-    applyFilters();
-    showStatus('Memory deleted successfully.', 'success');
+    await deleteMemories([memoryId]);
   } catch (error) {
     console.error('Failed to delete memory', error);
     showStatus('Failed to delete the memory. Please try again.', 'error');
@@ -385,6 +723,37 @@ async function handleDeleteMemory(memoryId: string, button: HTMLButtonElement): 
   }
   button.disabled = false;
   button.textContent = originalText || 'Delete';
+}
+
+async function handleBulkDelete(): Promise<void> {
+  if (!state.auth || state.selectedMemoryIds.size === 0) {
+    return;
+  }
+  const ids = Array.from(state.selectedMemoryIds);
+  const confirmed = window.confirm(
+    ids.length === 1
+      ? 'Delete the selected memory from BTS Me-mory?'
+      : `Delete ${ids.length} selected memories from BTS Me-mory?`
+  );
+  if (!confirmed) {
+    return;
+  }
+  const deleteSelectedButton = document.getElementById('deleteSelected') as HTMLButtonElement | null;
+  if (deleteSelectedButton) {
+    deleteSelectedButton.disabled = true;
+    deleteSelectedButton.textContent = 'Deleting…';
+  }
+  try {
+    await deleteMemories(ids);
+  } catch (error) {
+    console.error('Failed to delete selected memories', error);
+    showStatus('Failed to delete one or more memories. Please try again.', 'error');
+  } finally {
+    if (deleteSelectedButton) {
+      deleteSelectedButton.textContent = 'Delete selected';
+      deleteSelectedButton.disabled = state.selectedMemoryIds.size === 0;
+    }
+  }
 }
 
 async function loadSettingsSnapshot(): Promise<SettingsSnapshot | null> {
