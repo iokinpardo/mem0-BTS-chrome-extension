@@ -10,6 +10,7 @@ import { OPENMEMORY_PROMPTS } from '../utils/llm_prompts';
 import { SITE_CONFIG } from '../utils/site_config';
 import { getBrowser, sendExtensionEvent } from '../utils/util_functions';
 import { OPENMEMORY_UI } from '../utils/util_positioning';
+import { BTS_ICON_URL } from '../utils/branding';
 
 export {};
 
@@ -324,7 +325,7 @@ function createMemoryModal(
 
   // Add Mem0 logo (updated to SVG)
   const logoImg = document.createElement('img');
-  logoImg.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logoImg.src = BTS_ICON_URL;
   logoImg.style.cssText = `
     width: 26px;
     height: 26px;
@@ -1638,7 +1639,7 @@ function setupAutoInjectPrefetch() {
           let btn = document.createElement('button');
           btn.className = 'mem0-btn';
           let img = document.createElement('img');
-          img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+          img.src = BTS_ICON_URL;
           let dot = document.createElement('div');
           dot.className = 'dot';
           btn.appendChild(img);
@@ -1732,7 +1733,7 @@ function setupAutoInjectPrefetch() {
       let btn = document.createElement('button');
       btn.className = 'mem0-btn';
       let img = document.createElement('img');
-      img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+      img.src = BTS_ICON_URL;
       let dot = document.createElement('div');
       dot.className = 'dot';
       btn.appendChild(img);
@@ -1824,7 +1825,7 @@ function setupAutoInjectPrefetch() {
           let btn = document.createElement('button');
           btn.className = 'mem0-btn';
           let img = document.createElement('img');
-          img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+          img.src = BTS_ICON_URL;
           let dot = document.createElement('div');
           dot.className = 'dot';
           btn.appendChild(img);
@@ -1980,7 +1981,7 @@ function addSyncButton(): void {
       syncButton.style.marginRight = '8px';
 
       const syncIcon = document.createElement('img');
-      syncIcon.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+      syncIcon.src = BTS_ICON_URL;
       syncIcon.style.width = '16px';
       syncIcon.style.height = '16px';
       syncIcon.style.marginRight = '8px';
@@ -2419,7 +2420,7 @@ function showLoginPopup() {
   `;
 
   const logo = document.createElement('img');
-  logo.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logo.src = BTS_ICON_URL;
   logo.style.cssText = `
     width: 24px;
     height: 24px;

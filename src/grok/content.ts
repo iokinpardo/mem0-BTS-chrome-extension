@@ -9,6 +9,7 @@ import { OPENMEMORY_PROMPTS } from '../utils/llm_prompts';
 import { SITE_CONFIG } from '../utils/site_config';
 import { getBrowser, sendExtensionEvent } from '../utils/util_functions';
 import { OPENMEMORY_UI, type Placement } from '../utils/util_positioning';
+import { BTS_ICON_URL } from '../utils/branding';
 
 export {};
 
@@ -354,7 +355,7 @@ function initializeMem0Integration(): void {
         let btn = document.createElement('button');
         btn.className = 'mem0-btn';
         let img = document.createElement('img');
-        img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+        img.src = BTS_ICON_URL;
         let dot = document.createElement('div');
         dot.className = 'dot';
         btn.appendChild(img);
@@ -439,7 +440,7 @@ function initializeMem0Integration(): void {
         let btn = document.createElement('button');
         btn.className = 'mem0-btn';
         let img = document.createElement('img');
-        img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+        img.src = BTS_ICON_URL;
         let dot = document.createElement('div');
         dot.className = 'dot';
         btn.appendChild(img);
@@ -625,7 +626,7 @@ function initializeMem0Integration(): void {
 
 //     // Create button content - icon only, similar to Claude style
 //     mem0Button.innerHTML = `
-//       <img src="${chrome.runtime.getURL('icons/mem0-claude-icon-p.png')}"
+//       <img src="${BTS_ICON_URL}"
 //       width="18" height="18" style="display: block;">
 //     `;
 
@@ -878,7 +879,7 @@ function createMemoryModal(memoryItems: MemoryItem[], isLoading: boolean = false
         let btn = document.createElement('button');
         btn.className = 'mem0-btn';
         let img = document.createElement('img');
-        img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+        img.src = BTS_ICON_URL;
         let dot = document.createElement('div');
         dot.className = 'dot';
         btn.appendChild(img);
@@ -917,7 +918,7 @@ function createMemoryModal(memoryItems: MemoryItem[], isLoading: boolean = false
         let btn = document.createElement('button');
         btn.className = 'mem0-btn';
         let img = document.createElement('img');
-        img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+        img.src = BTS_ICON_URL;
         let dot = document.createElement('div');
         dot.className = 'dot';
         btn.appendChild(img);
@@ -1026,7 +1027,7 @@ function createMemoryModal(memoryItems: MemoryItem[], isLoading: boolean = false
 
   // Add Mem0 logo (updated to SVG)
   const logoImg = document.createElement('img');
-  logoImg.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logoImg.src = BTS_ICON_URL;
   logoImg.style.cssText = `
     width: 26px;
     height: 26px;
@@ -2067,7 +2068,7 @@ function showLoginPopup(): void {
   `;
 
   const logo = document.createElement('img');
-  logo.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logo.src = BTS_ICON_URL;
   logo.style.cssText = `
     width: 24px;
     height: 24px;

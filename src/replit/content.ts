@@ -11,6 +11,7 @@ import { OPENMEMORY_PROMPTS } from '../utils/llm_prompts';
 import { SITE_CONFIG } from '../utils/site_config';
 import { getBrowser, sendExtensionEvent } from '../utils/util_functions';
 import { OPENMEMORY_UI, type Placement } from '../utils/util_positioning';
+import { BTS_ICON_URL } from '../utils/branding';
 
 // Local types for this file
 type MutableMutationObserver = MutationObserver & {
@@ -735,7 +736,7 @@ try {
               let btn = document.createElement('button');
               btn.className = 'mem0-btn';
               let img = document.createElement('img');
-              img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+              img.src = BTS_ICON_URL;
               let dot = document.createElement('div');
               dot.className = 'dot';
               btn.appendChild(img);
@@ -785,7 +786,7 @@ try {
             let btn = document.createElement('button');
             btn.className = 'mem0-btn';
             let img = document.createElement('img');
-            img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+            img.src = BTS_ICON_URL;
             let dot = document.createElement('div');
             dot.className = 'dot';
             btn.appendChild(img);
@@ -840,7 +841,7 @@ try {
                 let btn = document.createElement('button');
                 btn.className = 'mem0-btn';
                 let img = document.createElement('img');
-                img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+                img.src = BTS_ICON_URL;
                 let dot = document.createElement('div');
                 dot.className = 'dot';
                 btn.appendChild(img);
@@ -1145,7 +1146,7 @@ try {
 
     // Add logo and text
     const logoDark = document.createElement('img');
-    logoDark.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+    logoDark.src = BTS_ICON_URL;
     logoDark.style.cssText = `
     width: 20px;
     height: 20px;
@@ -1393,7 +1394,7 @@ try {
 
     // Add Mem0 logo
     const logoImg = document.createElement('img');
-    logoImg.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+    logoImg.src = BTS_ICON_URL;
     logoImg.style.cssText = `
     width: 26px;
     height: 26px;

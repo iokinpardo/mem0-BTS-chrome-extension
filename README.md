@@ -32,6 +32,7 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **BTS-branded experience:** Lighter BTS styling with refreshed typography and logo treatment throughout the dashboard, sidebar, and sign-in popup
 - **Bulk memory management:** Select multiple memories at once and remove them from BTS in a single action while staying synced with the cloud API
 - **Category-aware filtering:** Review how many memories belong to each category right from the dashboard dropdown to pick the right filter faster
+- **Memory query assistant:** Run quick prompts against your saved memories from the BTS dashboard with OpenAI-powered summaries
 
 ### Dashboard pagination controls
 - **Feature name:** Dashboard pagination controls
@@ -48,13 +49,19 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Feature name:** BTS interface refresh
 - **Purpose:** Deliver a cohesive, on-brand BTS Me-mory experience across the dashboard, in-page sidebar, and extension popup with bright palettes and updated logos.
 - **Usage example:** Open the BTS Me-mory dashboard, toggle the in-page sidebar, or click the extension icon to view the BTS-styled interfaces featuring the refreshed logo and copy.
-- **Dependencies / breaking changes:** No new dependencies; purely visual update.
+- **Dependencies / breaking changes:** Loads BTS-hosted logos directly from `ai.bts.com`; ensure the domain remains reachable.
 
 ### Category-aware filtering
 - **Feature name:** Category-aware filtering
 - **Purpose:** Surface the total number of memories within each category so BTS teams can immediately gauge relevance before switching filters.
 - **Usage example:** Open the **Category** dropdown on the BTS Me-mory dashboard to see options such as `family (15)` or `food (12)` and choose the most helpful category for review.
 - **Dependencies / breaking changes:** No additional dependencies; compatible with existing filtering workflows.
+
+### Memory query assistant
+- **Feature name:** Memory query assistant
+- **Purpose:** Ask natural-language questions about your stored memories directly from the BTS Me-mory Dashboard and receive concise answers generated with a lightweight OpenAI model.
+- **Usage example:** Open the BTS Me-mory Dashboard, type “What did I plan for the product launch?” into the **Ask your memories** panel, and press **Run query** (or hit **Cmd/Ctrl + Enter**) to see an answer plus supporting memory snippets.
+- **Dependencies / breaking changes:** Uses the existing Mem0 API credentials; no additional configuration or breaking changes required.
 
 ## Installation
 
