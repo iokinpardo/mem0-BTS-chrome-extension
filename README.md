@@ -60,7 +60,7 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 ### Memory query assistant
 - **Feature name:** Memory query assistant
 - **Purpose:** Ask natural-language questions about your stored memories and receive concise answers generated with a lightweight OpenAI model, optionally filtered by simple or multiple-memory categories.
-- **Usage example:** Open the BTS Me-mory sidebar, type “What did I plan for the product launch?” into the new **Ask your memories** field, choose **Simple memories** from the dropdown, and press **Run query** to see an answer plus supporting memory snippets.
+- **Usage example:** Open the BTS Me-mory sidebar, type “What did I plan for the product launch?” into the new **Ask your memories** field, choose **Simple memories** from the dropdown, and press **Run query** (or hit **Cmd/Ctrl + Enter**) to see an answer plus supporting memory snippets.
 - **Dependencies / breaking changes:** Uses the existing Mem0 API credentials; no additional configuration or breaking changes required.
 
 ## Installation

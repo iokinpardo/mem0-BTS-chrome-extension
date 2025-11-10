@@ -15,6 +15,7 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
 (function () {
   let sidebarVisible = false;
   let latestQueryContext: { query: string; memories: MemorySearchItem[]; answer?: string | null } | null = null;
+  let activeQueryRequestId = 0;
 
   function initializeMem0Sidebar(): void {
     // Listen for messages from the extension
@@ -687,7 +688,24 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     const categorySelect = sidebarContainer.querySelector('#memoryCategorySelect') as HTMLSelectElement;
     const queryResult = sidebarContainer.querySelector('#memoryQueryResult') as HTMLElement;
 
+    if (queryButton && !queryButton.dataset.originalLabel) {
+      queryButton.dataset.originalLabel = queryButton.textContent ?? 'Run query';
+    }
+
     queryForm?.addEventListener('submit', event => {
+      event.preventDefault();
+      handleMemoryQuery({ queryInput, categorySelect, trigger: queryButton, resultContainer: queryResult });
+    });
+
+    queryInput?.addEventListener('keydown', event => {
+      if (!(event.ctrlKey || event.metaKey) || event.key !== 'Enter') {
+        return;
+      }
+
+      if (queryButton?.disabled) {
+        return;
+      }
+
       event.preventDefault();
       handleMemoryQuery({ queryInput, categorySelect, trigger: queryButton, resultContainer: queryResult });
     });
@@ -1020,6 +1038,32 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     }
   }
 
+  function setQueryTriggerLoading(trigger?: HTMLButtonElement | null): void {
+    if (!trigger) {
+      return;
+    }
+
+    if (!trigger.dataset.originalLabel) {
+      trigger.dataset.originalLabel = trigger.textContent ?? 'Run query';
+    }
+
+    trigger.disabled = true;
+    trigger.dataset.loading = 'true';
+    trigger.textContent = 'Running...';
+  }
+
+  function resetQueryTrigger(trigger?: HTMLButtonElement | null): void {
+    if (!trigger) {
+      return;
+    }
+
+    trigger.disabled = false;
+    if (trigger.dataset.loading) {
+      delete trigger.dataset.loading;
+    }
+    trigger.textContent = trigger.dataset.originalLabel ?? 'Run query';
+  }
+
   function handleMemoryQuery(options: {
     queryInput: HTMLTextAreaElement | null;
     categorySelect: HTMLSelectElement | null;
@@ -1034,6 +1078,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     const query = queryInput.value.trim();
     if (!query) {
       latestQueryContext = null;
+      activeQueryRequestId += 1;
+      resetQueryTrigger(trigger);
       updateQueryResultState('empty', {
         resultContainer,
         message: 'Type a question to query your memories.',
@@ -1056,13 +1102,9 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     resultContainer: HTMLElement;
   }): void {
     const { query, category, trigger, resultContainer } = options;
-    const originalLabel = trigger?.textContent ?? '';
+    const requestId = ++activeQueryRequestId;
 
-    if (trigger) {
-      trigger.disabled = true;
-      trigger.dataset.loading = 'true';
-      trigger.textContent = 'Running...';
-    }
+    setQueryTriggerLoading(trigger);
 
     updateQueryResultState('loading', { resultContainer });
 
@@ -1083,11 +1125,14 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           const accessToken = data[StorageKey.ACCESS_TOKEN];
 
           if (!apiKey && !accessToken) {
-            latestQueryContext = null;
-            updateQueryResultState('error', {
-              resultContainer,
-              message: 'Sign in to query your memories.',
-            });
+            if (requestId === activeQueryRequestId) {
+              latestQueryContext = null;
+              updateQueryResultState('error', {
+                resultContainer,
+                message: 'Sign in to query your memories.',
+              });
+              resetQueryTrigger(trigger);
+            }
             return;
           }
 
@@ -1173,32 +1218,32 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
             responseMessage = 'Showing the most relevant memories.';
           }
 
-          latestQueryContext = {
-            query,
-            memories: aggregatedMemories,
-            answer,
-          };
+          if (requestId === activeQueryRequestId) {
+            latestQueryContext = {
+              query,
+              memories: aggregatedMemories,
+              answer,
+            };
 
-          renderMemoryQueryResult({
-            category,
-            resultContainer,
-            query,
-            message: responseMessage,
-          });
+            renderMemoryQueryResult({
+              category,
+              resultContainer,
+              query,
+              message: responseMessage,
+            });
+          }
         } catch (error) {
           console.error('Error executing memory query:', error);
-          latestQueryContext = null;
-          updateQueryResultState('error', {
-            resultContainer,
-            message: 'Unable to query memories right now. Please try again later.',
-          });
+          if (requestId === activeQueryRequestId) {
+            latestQueryContext = null;
+            updateQueryResultState('error', {
+              resultContainer,
+              message: 'Unable to query memories right now. Please try again later.',
+            });
+          }
         } finally {
-          if (trigger) {
-            trigger.disabled = false;
-            if (trigger.dataset.loading) {
-              delete trigger.dataset.loading;
-            }
-            trigger.textContent = originalLabel;
+          if (trigger && requestId === activeQueryRequestId) {
+            resetQueryTrigger(trigger);
           }
         }
       }
