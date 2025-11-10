@@ -27,6 +27,14 @@ export type MemoriesResponse = Partial<{
   results: Memory[];
 }>;
 
+export type MemoryQueryResponse = Partial<{
+  answer: string;
+  memories: MemoryItem[];
+  results: MemoryItem[];
+  related_memories: MemoryItem[];
+  message: string;
+}>;
+
 /** Prompt templates and regex patterns */
 export type OpenMemoryPrompts = {
   memory_header_html_strong: string;
