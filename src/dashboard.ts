@@ -1,7 +1,8 @@
 import { DEFAULT_USER_ID } from './types/api';
-import type { MemoriesResponse, Memory } from './types/memory';
+import type { MemoriesResponse, Memory, MemoryItem, MemoryQueryResponse, MemorySearchItem } from './types/memory';
 import { StorageKey } from './types/storage';
 import { getDomainRuleLists } from './utils/domain_rules';
+import { BTS_LOGO_URL } from './utils/branding';
 
 const MEMORIES_ENDPOINT = 'https://api.mem0.ai/v1/memories/';
 const API_PAGE_SIZE = 200;
@@ -41,6 +42,8 @@ type DashboardState = {
   selectedMemoryIds: Set<string>;
 };
 
+let activeQueryRequestId = 0;
+
 const state: DashboardState = {
   auth: null,
   allMemories: [],
@@ -57,6 +60,10 @@ const state: DashboardState = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  const brandLogo = document.querySelector<HTMLImageElement>('.brand-logo');
+  if (brandLogo) {
+    brandLogo.src = BTS_LOGO_URL;
+  }
   initializeTabs();
   initializeDashboard().catch(error => {
     console.error('Failed to initialize dashboard', error);
@@ -96,6 +103,7 @@ async function initializeDashboard(): Promise<void> {
   attachPaginationListeners();
   attachSelectionListeners();
   attachRefreshListener();
+  attachQueryListeners();
 
   await loadAuthContext();
   if (!state.auth) {
@@ -214,6 +222,420 @@ function attachRefreshListener(): void {
     }
     await refreshMemories(true);
   });
+}
+
+function attachQueryListeners(): void {
+  const form = document.getElementById('memoryQueryForm') as HTMLFormElement | null;
+  const queryInput = document.getElementById('memoryQueryInput') as HTMLTextAreaElement | null;
+  const queryButton = document.getElementById('memoryQueryBtn') as HTMLButtonElement | null;
+  const resultContainer = document.getElementById('memoryQueryResult') as HTMLElement | null;
+
+  if (queryButton && !queryButton.dataset.originalLabel) {
+    queryButton.dataset.originalLabel = queryButton.textContent ?? 'Run query';
+  }
+
+  if (resultContainer) {
+    updateQueryResultState('idle', { resultContainer });
+  }
+
+  form?.addEventListener('submit', event => {
+    event.preventDefault();
+    handleMemoryQuery({ queryInput, trigger: queryButton, resultContainer });
+  });
+
+  queryInput?.addEventListener('keydown', event => {
+    if (!(event.metaKey || event.ctrlKey) || event.key !== 'Enter') {
+      return;
+    }
+
+    if (queryButton?.disabled) {
+      return;
+    }
+
+    event.preventDefault();
+    handleMemoryQuery({ queryInput, trigger: queryButton, resultContainer });
+  });
+
+  queryInput?.addEventListener('input', () => {
+    if (!queryInput.value.trim()) {
+      activeQueryRequestId += 1;
+      resetQueryTrigger(queryButton);
+      if (resultContainer) {
+        updateQueryResultState('empty', {
+          resultContainer,
+          message: 'Type a question to query your memories.',
+        });
+      }
+    }
+  });
+}
+
+function handleMemoryQuery(options: {
+  queryInput: HTMLTextAreaElement | null;
+  trigger?: HTMLButtonElement | null;
+  resultContainer: HTMLElement | null;
+}): void {
+  const { queryInput, trigger, resultContainer } = options;
+  if (!queryInput || !resultContainer) {
+    return;
+  }
+
+  const query = queryInput.value.trim();
+  if (!query) {
+    activeQueryRequestId += 1;
+    resetQueryTrigger(trigger);
+    updateQueryResultState('empty', {
+      resultContainer,
+      message: 'Type a question to query your memories.',
+    });
+    return;
+  }
+
+  executeMemoryQuery({ query, trigger, resultContainer });
+}
+
+function executeMemoryQuery(options: {
+  query: string;
+  trigger?: HTMLButtonElement | null;
+  resultContainer: HTMLElement;
+}): void {
+  const { query, trigger, resultContainer } = options;
+  const requestId = ++activeQueryRequestId;
+
+  setQueryTriggerLoading(trigger);
+  updateQueryResultState('loading', { resultContainer });
+
+  chrome.storage.sync.get(
+    [
+      StorageKey.API_KEY,
+      StorageKey.ACCESS_TOKEN,
+      StorageKey.USER_ID,
+      StorageKey.USER_ID_CAMEL,
+      StorageKey.SELECTED_ORG,
+      StorageKey.SELECTED_PROJECT,
+      StorageKey.SIMILARITY_THRESHOLD,
+      StorageKey.TOP_K,
+    ],
+    async data => {
+      try {
+        const apiKey = data[StorageKey.API_KEY];
+        const accessToken = data[StorageKey.ACCESS_TOKEN];
+
+        if (!apiKey && !accessToken) {
+          if (requestId === activeQueryRequestId) {
+            updateQueryResultState('error', {
+              resultContainer,
+              message: 'Sign in to query your memories.',
+            });
+            resetQueryTrigger(trigger);
+          }
+          return;
+        }
+
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (accessToken) {
+          headers.Authorization = `Bearer ${accessToken}`;
+        } else {
+          headers.Authorization = `Token ${apiKey}`;
+        }
+
+        const userId =
+          data[StorageKey.USER_ID_CAMEL] || data[StorageKey.USER_ID] || DEFAULT_USER_ID;
+        const threshold =
+          typeof data[StorageKey.SIMILARITY_THRESHOLD] === 'number'
+            ? data[StorageKey.SIMILARITY_THRESHOLD]
+            : 0.1;
+        const topK =
+          typeof data[StorageKey.TOP_K] === 'number' ? data[StorageKey.TOP_K] : 10;
+
+        const optionalParams: Record<string, string> = {};
+        if (data[StorageKey.SELECTED_ORG]) {
+          optionalParams.org_id = data[StorageKey.SELECTED_ORG];
+        }
+        if (data[StorageKey.SELECTED_PROJECT]) {
+          optionalParams.project_id = data[StorageKey.SELECTED_PROJECT];
+        }
+
+        const basePayload = {
+          query,
+          filters: { user_id: userId },
+          rerank: true,
+          threshold,
+          top_k: topK,
+          filter_memories: false,
+          source: 'OPENMEMORY_CHROME_EXTENSION',
+          ...optionalParams,
+        };
+
+        let answer: string | null = null;
+        let aggregatedMemories: MemorySearchItem[] = [];
+        let responseMessage: string | undefined;
+
+        try {
+          const response = await fetch('https://api.mem0.ai/api/v1/memories/query/', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ ...basePayload, model: 'gpt-4o-mini' }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Query endpoint returned ${response.status}`);
+          }
+
+          const payload = (await response.json()) as MemoryQueryResponse;
+          answer = payload.answer ?? payload.message ?? null;
+          responseMessage =
+            payload.message && payload.message !== answer ? payload.message : undefined;
+          aggregatedMemories = extractMemoriesFromResponse(payload);
+        } catch (error) {
+          console.warn('Falling back to search endpoint for memory query:', error);
+
+          const searchResponse = await fetch('https://api.mem0.ai/v2/memories/search/', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(basePayload),
+          });
+
+          if (!searchResponse.ok) {
+            throw new Error(`Search endpoint returned ${searchResponse.status}`);
+          }
+
+          const results = (await searchResponse.json()) as MemorySearchItem[];
+          aggregatedMemories = dedupeMemories(results);
+          responseMessage = 'Showing the most relevant memories.';
+        }
+
+        if (requestId === activeQueryRequestId) {
+          updateQueryResultState('success', {
+            resultContainer,
+            answer,
+            memories: aggregatedMemories,
+            message: responseMessage,
+            noMemoriesMessage: aggregatedMemories.length
+              ? undefined
+              : 'No memories matched your query.',
+          });
+        }
+      } catch (error) {
+        console.error('Error executing memory query:', error);
+        if (requestId === activeQueryRequestId) {
+          updateQueryResultState('error', {
+            resultContainer,
+            message: 'Unable to query memories right now. Please try again later.',
+          });
+        }
+      } finally {
+        if (trigger && requestId === activeQueryRequestId) {
+          resetQueryTrigger(trigger);
+        }
+      }
+    }
+  );
+}
+
+function setQueryTriggerLoading(trigger?: HTMLButtonElement | null): void {
+  if (!trigger) {
+    return;
+  }
+
+  if (!trigger.dataset.originalLabel) {
+    trigger.dataset.originalLabel = trigger.textContent ?? 'Run query';
+  }
+
+  trigger.disabled = true;
+  trigger.dataset.loading = 'true';
+  trigger.textContent = 'Running...';
+}
+
+function resetQueryTrigger(trigger?: HTMLButtonElement | null): void {
+  if (!trigger) {
+    return;
+  }
+
+  trigger.disabled = false;
+  if (trigger.dataset.loading) {
+    delete trigger.dataset.loading;
+  }
+  trigger.textContent = trigger.dataset.originalLabel ?? 'Run query';
+}
+
+function updateQueryResultState(
+  state: 'idle' | 'loading' | 'error' | 'empty' | 'success',
+  options: {
+    resultContainer: HTMLElement;
+    message?: string;
+    answer?: string | null;
+    memories?: MemorySearchItem[];
+    noMemoriesMessage?: string;
+  }
+): void {
+  const { resultContainer, message, answer, memories, noMemoriesMessage } = options;
+
+  if (!resultContainer) {
+    return;
+  }
+
+  if (state === 'idle') {
+    resultContainer.hidden = true;
+    resultContainer.innerHTML = '';
+    resultContainer.classList.remove('loading', 'error', 'success', 'empty');
+    return;
+  }
+
+  resultContainer.hidden = false;
+  resultContainer.classList.remove('loading', 'error', 'success', 'empty');
+
+  if (state === 'loading') {
+    resultContainer.classList.add('loading');
+    resultContainer.innerHTML = '<p class="query-status">Consulting your memories…</p>';
+    return;
+  }
+
+  if (state === 'error') {
+    resultContainer.classList.add('error');
+    resultContainer.innerHTML = `<p class="query-status">${escapeHtml(
+      message || 'Something went wrong while querying your memories.'
+    )}</p>`;
+    return;
+  }
+
+  if (state === 'empty') {
+    resultContainer.classList.add('empty');
+    resultContainer.innerHTML = `<p class="query-status muted">${escapeHtml(
+      message || 'Type a question to get started.'
+    )}</p>`;
+    return;
+  }
+
+  const hasMemories = Boolean(memories && memories.length > 0);
+  const parts: string[] = [];
+
+  if (answer) {
+    parts.push(`<p class="query-answer">${escapeHtml(answer)}</p>`);
+  }
+
+  if (hasMemories && memories) {
+    const listItems = memories
+      .map(memory => {
+        const preview = formatMemoryPreview(memory.memory);
+        const categories = (memory.categories || [])
+          .map(cat => `<span class="memory-category">${escapeHtml(cat)}</span>`);
+        const categoriesMarkup = categories.length
+          ? `<div class="memory-categories">${categories.join('')}</div>`
+          : '';
+        return `<li class="query-memory-item"><p>${escapeHtml(preview)}</p>${categoriesMarkup}</li>`;
+      })
+      .join('');
+
+    parts.push(`<div class="query-supporting"><h4>Supporting memories</h4><ul>${listItems}</ul></div>`);
+  }
+
+  if (!hasMemories && noMemoriesMessage) {
+    parts.push(`<p class="query-status muted">${escapeHtml(noMemoriesMessage)}</p>`);
+  }
+
+  if (message) {
+    parts.push(`<p class="query-status muted">${escapeHtml(message)}</p>`);
+  }
+
+  resultContainer.classList.add('success');
+  resultContainer.innerHTML = parts.length
+    ? parts.join('')
+    : '<p class="query-status muted">No matching memories found.</p>';
+}
+
+function extractMemoriesFromResponse(response: MemoryQueryResponse): MemorySearchItem[] {
+  const collected: Array<Memory | MemoryItem | MemorySearchItem> = [];
+
+  const pushItems = (items?: Array<Memory | MemoryItem | MemorySearchItem>) => {
+    if (!items) {
+      return;
+    }
+    items.forEach(item => {
+      collected.push(item);
+    });
+  };
+
+  pushItems(response.memories as Array<Memory | MemoryItem | MemorySearchItem> | undefined);
+  pushItems(response.results as Array<Memory | MemoryItem | MemorySearchItem> | undefined);
+  pushItems(response.related_memories as Array<Memory | MemoryItem | MemorySearchItem> | undefined);
+
+  return dedupeMemories(collected);
+}
+
+function dedupeMemories(
+  items: Array<Memory | MemoryItem | MemorySearchItem>
+): MemorySearchItem[] {
+  const seen = new Set<string>();
+  const deduped: MemorySearchItem[] = [];
+
+  items.forEach(item => {
+    const normalized = toMemorySearchItem(item);
+    if (!normalized) {
+      return;
+    }
+    const key = `${normalized.id}|${normalized.memory}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    deduped.push(normalized);
+  });
+
+  return deduped;
+}
+
+function toMemorySearchItem(
+  memory: Memory | MemoryItem | MemorySearchItem
+): MemorySearchItem | null {
+  if (!memory) {
+    return null;
+  }
+
+  const rawMemory =
+    (memory as MemorySearchItem).memory ??
+    (memory as MemoryItem).memory ??
+    (memory as MemoryItem).text ??
+    (memory as Memory).memory ??
+    '';
+
+  const trimmedMemory = typeof rawMemory === 'string' ? rawMemory.trim() : '';
+  if (!trimmedMemory) {
+    return null;
+  }
+
+  const id =
+    (memory as MemorySearchItem).id ??
+    (memory as MemoryItem).id ??
+    (memory as Memory).id ??
+    trimmedMemory;
+
+  const categories =
+    (memory as MemorySearchItem).categories ??
+    (memory as MemoryItem).categories ??
+    ((memory as Memory).categories as string[] | undefined) ??
+    [];
+
+  const normalizedCategories = Array.isArray(categories)
+    ? categories.filter(category => typeof category === 'string' && category.trim().length > 0)
+    : [];
+
+  return {
+    id: String(id),
+    memory: trimmedMemory,
+    categories: normalizedCategories,
+  };
+}
+
+function formatMemoryPreview(text: string, limit: number = 160): string {
+  if (!text) {
+    return '';
+  }
+  const normalized = text.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= limit) {
+    return normalized;
+  }
+  return `${normalized.substring(0, limit - 1)}…`;
 }
 
 async function loadAuthContext(): Promise<void> {
@@ -755,6 +1177,7 @@ async function handleBulkDelete(): Promise<void> {
     }
   }
 }
+
 
 async function loadSettingsSnapshot(): Promise<SettingsSnapshot | null> {
   const domainRules = await getDomainRuleLists();
