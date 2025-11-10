@@ -32,7 +32,7 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **BTS-branded experience:** Lighter BTS styling with refreshed typography and logo treatment throughout the dashboard, sidebar, and sign-in popup
 - **Bulk memory management:** Select multiple memories at once and remove them from BTS in a single action while staying synced with the cloud API
 - **Category-aware filtering:** Review how many memories belong to each category right from the dashboard dropdown to pick the right filter faster
-- **Memory query assistant:** Run quick prompts against your saved memories with category filters and OpenAI-powered summaries
+- **Memory query assistant:** Run quick prompts against your saved memories from the BTS dashboard with OpenAI-powered summaries
 
 ### Dashboard pagination controls
 - **Feature name:** Dashboard pagination controls
@@ -59,8 +59,8 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 
 ### Memory query assistant
 - **Feature name:** Memory query assistant
-- **Purpose:** Ask natural-language questions about your stored memories and receive concise answers generated with a lightweight OpenAI model, optionally filtered by simple or multiple-memory categories.
-- **Usage example:** Open the BTS Me-mory sidebar, type “What did I plan for the product launch?” into the new **Ask your memories** field, choose **Simple memories** from the dropdown, and press **Run query** (or hit **Cmd/Ctrl + Enter**) to see an answer plus supporting memory snippets.
+- **Purpose:** Ask natural-language questions about your stored memories directly from the BTS Me-mory Dashboard and receive concise answers generated with a lightweight OpenAI model.
+- **Usage example:** Open the BTS Me-mory Dashboard, type “What did I plan for the product launch?” into the **Ask your memories** panel, and press **Run query** (or hit **Cmd/Ctrl + Enter**) to see an answer plus supporting memory snippets.
 - **Dependencies / breaking changes:** Uses the existing Mem0 API credentials; no additional configuration or breaking changes required.
 
 ## Installation
