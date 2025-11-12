@@ -3,6 +3,7 @@ import type { OnCommittedDetails } from './types/browser';
 import { Category, Provider } from './types/providers';
 import type { Settings } from './types/settings';
 import { StorageKey } from './types/storage';
+import { isMemoryAllowedForUrl } from './utils/domain_rules';
 
 function getSettings(): Promise<Settings> {
   return new Promise(resolve => {
@@ -121,6 +122,11 @@ export function initDirectUrlTracking(): void {
           }
         });
         if (!allow) {
+          return;
+        }
+
+        const allowed = await isMemoryAllowedForUrl(url);
+        if (!allowed) {
           return;
         }
 

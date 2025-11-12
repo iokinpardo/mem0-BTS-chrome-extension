@@ -4,6 +4,7 @@ import type { MemoryItem, MemorySearchItem, OptionalApiParams } from '../types/m
 import { SidebarAction } from '../types/messages';
 import { type StorageItems, StorageKey } from '../types/storage';
 import { createOrchestrator, type SearchStorage } from '../utils/background_search';
+import { isMemoryAllowedForUrl } from '../utils/domain_rules';
 import { OPENMEMORY_PROMPTS } from '../utils/llm_prompts';
 import { SITE_CONFIG } from '../utils/site_config';
 import { getBrowser, sendExtensionEvent } from '../utils/util_functions';
@@ -161,10 +162,10 @@ function hookGrokBackgroundSearchTyping() {
   }
 
   if (textarea.dataset.grokBackgroundHooked) {
-    return; 
+    return;
   }
 
-  textarea.dataset.grokBackgroundHooked = 'true'; 
+  textarea.dataset.grokBackgroundHooked = 'true';
 
   if (!grokBackgroundSearchHandler) {
     grokBackgroundSearchHandler = function () {
@@ -183,7 +184,7 @@ function setupInputObserver(): void {
     return;
   }
 
-  hookGrokBackgroundSearchTyping(); 
+  hookGrokBackgroundSearchTyping();
 }
 
 function setInputValue(inputElement: HTMLTextAreaElement | null, value: string): void {
@@ -318,7 +319,7 @@ function setInputValue(inputElement: HTMLTextAreaElement | null, value: string):
 
 function initializeMem0Integration(): void {
   setupInputObserver();
-  hookGrokBackgroundSearchTyping(); 
+  hookGrokBackgroundSearchTyping();
 
   // Set up mutation observer to reinject elements when DOM changes
   // Cache-first mount (before focus)
@@ -741,12 +742,12 @@ function updateNotificationDot(): void {
     mo.observe(textarea, { characterData: true, subtree: true });
 
     if (!textarea.dataset.grokCheckTextHooked) {
-      textarea.dataset.grokCheckTextHooked = 'true'; 
+      textarea.dataset.grokCheckTextHooked = 'true';
       textarea.addEventListener('input', checkForText);
       textarea.addEventListener('keyup', checkForText);
       textarea.addEventListener('focus', checkForText);
     }
-    
+
     checkForText();
     setTimeout(checkForText, 500);
   } else {
@@ -1801,10 +1802,14 @@ function getContentWithoutMemories(): string {
 }
 
 // Function to check if memory is enabled
-function getMemoryEnabledState(): Promise<boolean> {
-  return new Promise<boolean>(resolve => {
+async function getMemoryEnabledState(): Promise<boolean> {
+  const allowed = await isMemoryAllowedForUrl(window.location.href);
+  if (!allowed) {
+    return false;
+  }
+  return await new Promise<boolean>(resolve => {
     chrome.storage.sync.get([StorageKey.MEMORY_ENABLED], function (result) {
-      resolve(result.memory_enabled !== false); // Default to true if not set
+      resolve(result[StorageKey.MEMORY_ENABLED] !== false);
     });
   });
 }

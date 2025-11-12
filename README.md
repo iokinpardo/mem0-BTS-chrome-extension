@@ -25,21 +25,55 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Smart Context Detection:** Automatically captures relevant information from your conversations
 - **Intelligent Memory Retrieval:** Surfaces relevant memories at the right time
 - **One-click sync** with existing ChatGPT memories
-- **Memory dashboard** to manage all memories
+- **Built-in memory dashboard:** Filter, search, and delete memories without leaving the extension
+- **Per-domain capture rules:** Allow or block OpenMemory on specific domains and subdomains directly from the sidebar
+- **Dashboard build integration:** Production builds now bundle the dashboard script so the Memories and Settings tabs load correctly from the `dist/` package after `npm run build`
+- **Dashboard pagination controls:** Navigate large memory sets with page counters, accurate totals, and adjustable per-page views directly in the dashboard
+- **BTS-branded experience:** Lighter BTS styling with refreshed typography and logo treatment throughout the dashboard, sidebar, and sign-in popup
+- **Bulk memory management:** Select multiple memories at once and remove them from BTS in a single action while staying synced with the cloud API
+- **Category-aware filtering:** Review how many memories belong to each category right from the dashboard dropdown to pick the right filter faster
+- **Memory query assistant:** Run quick prompts against your saved memories from the BTS dashboard with OpenAI-powered summaries
+
+### Dashboard pagination controls
+- **Feature name:** Dashboard pagination controls
+- **Purpose:** Keep the dashboard responsive while browsing large memory collections by navigating with clear page indicators and totals.
+- **Usage example:** Open the dashboard from the sidebar, adjust the **Page size** dropdown to 50 to show more items at once, and use the **Previous/Next** buttons to move between pages.
+
+### Bulk memory management
+- **Feature name:** Bulk memory management
+- **Purpose:** Speed up moderation by selecting several memories at once and permanently deleting them from BTS in one streamlined action.
+- **Usage example:** From the BTS Me-mory dashboard, select a few rows (or click **Select page**) and press **Delete selected** to remove them from both the dashboard and the hosted BTS memory store.
+- **Dependencies / breaking changes:** Requires an authenticated session; no breaking changes.
+
+### BTS interface refresh
+- **Feature name:** BTS interface refresh
+- **Purpose:** Deliver a cohesive, on-brand BTS Me-mory experience across the dashboard, in-page sidebar, and extension popup with bright palettes and updated logos.
+- **Usage example:** Open the BTS Me-mory dashboard, toggle the in-page sidebar, or click the extension icon to view the BTS-styled interfaces featuring the refreshed logo and copy.
+- **Dependencies / breaking changes:** No new dependencies; purely visual update.
+
+### Category-aware filtering
+- **Feature name:** Category-aware filtering
+- **Purpose:** Surface the total number of memories within each category so BTS teams can immediately gauge relevance before switching filters.
+- **Usage example:** Open the **Category** dropdown on the BTS Me-mory dashboard to see options such as `family (15)` or `food (12)` and choose the most helpful category for review.
+- **Dependencies / breaking changes:** No additional dependencies; compatible with existing filtering workflows.
+
+### Memory query assistant
+- **Feature name:** Memory query assistant
+- **Purpose:** Ask natural-language questions about your stored memories directly from the BTS Me-mory Dashboard and receive concise answers generated with a lightweight OpenAI model.
+- **Usage example:** Open the BTS Me-mory Dashboard, type “What did I plan for the product launch?” into the **Ask your memories** panel, and press **Run query** (or hit **Cmd/Ctrl + Enter**) to see an answer plus supporting memory snippets.
+- **Dependencies / breaking changes:** Uses the existing Mem0 API credentials; no additional configuration or breaking changes required.
 
 ## Installation
 
 > **Note:** Make sure you have [Node.js](https://nodejs.org/) installed before proceeding.
 
-1. Clone this repository.
-2. Navigate to the directory where you cloned the repository.
-3. Run `npm install` to install dependencies.
-4. Run `npm run build` to build the extension.
-5. The built files will be in the `dist` directory.
-6. Open Google Chrome and navigate to `chrome://extensions`.
-7. Enable "Developer mode" in the top right corner.
-8. Click "Load unpacked" and select the `dist` directory containing the extension files.
-9. The Mem0 Chrome Extension should now appear in your Chrome toolbar.
+1. Clone this repository and open the project directory in your terminal.
+2. Install dependencies with `npm install`.
+3. Build the production bundle by running `npm run build` (add `npm run lint:check && npm run type-check` beforehand if you want to verify the codebase).
+4. Confirm that the compiled assets now live in the `dist/` folder.
+5. In Chrome, navigate to `chrome://extensions` and toggle **Developer mode** in the top-right corner.
+6. Click **Load unpacked** and pick the generated `dist/` directory.
+7. Pin the OpenMemory icon in your toolbar, click it, and complete sign-in to start capturing memories.
 
 
 ## Usage
@@ -49,6 +83,8 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 3. Start chatting with any supported AI assistant
 4. For ChatGPT and Perplexity, just press enter while chatting as you would normally
 5. On Claude, click the Mem0 button or use shortcut ^ + M
+6. Open the sidebar settings to configure organization/project, retrieval thresholds, and per-domain allow/block lists
+7. Click **Open Dashboard** in the sidebar to filter, search, and delete memories directly inside Chrome
 
 ## ❤️ Free to Use
 

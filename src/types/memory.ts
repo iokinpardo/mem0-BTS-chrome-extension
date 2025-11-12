@@ -22,7 +22,17 @@ export type MemorySearchItem = { id: string | number; memory: string; categories
 /** API response wrapper for memories */
 export type MemoriesResponse = Partial<{
   count: number;
+  next: string | null;
+  previous: string | null;
   results: Memory[];
+}>;
+
+export type MemoryQueryResponse = Partial<{
+  answer: string;
+  memories: MemoryItem[];
+  results: MemoryItem[];
+  related_memories: MemoryItem[];
+  message: string;
 }>;
 
 /** Prompt templates and regex patterns */

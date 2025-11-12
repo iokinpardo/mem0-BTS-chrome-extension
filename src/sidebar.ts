@@ -110,9 +110,14 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     fixedHeader.className = 'fixed-header';
     fixedHeader.innerHTML = `
         <div class="header">
-          <div class="logo-container">
-            <img src=${chrome.runtime.getURL('icons/mem0-claude-icon.png')} class="openmemory-icon" alt="OpenMemory Logo">
-            <span class="openmemory-logo">OpenMemory</span>
+          <div class="logo-container" aria-label="BTS Me-mory">
+            <span class="bts-logo-mark" aria-hidden="true">
+              <svg viewBox="0 0 140 160" role="img" focusable="false">
+                <path fill="currentColor" d="M20 18 64 2v156L20 142z"></path>
+                <path fill="currentColor" d="m120 18-44-16v156l44-16z"></path>
+              </svg>
+            </span>
+            <span class="sidebar-logo">BTS Me-mory</span>
           </div>
           <div class="header-buttons">
             <button id="closeBtn" class="close-button" title="Close">
@@ -219,6 +224,30 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
       <p class="section-description">Save searches and typed URLs as memories</p>
     `;
     settingsTabContent.appendChild(trackSearchSection);
+
+    const domainControlSection = document.createElement('div');
+    domainControlSection.className = 'section';
+    domainControlSection.innerHTML = `
+      <div class="section-header">
+        <h2 class="section-title">Domain controls</h2>
+      </div>
+      <p class="section-description">Choose where BTS Me-mory captures data.</p>
+      <label class="section-subtitle" for="domainAllowlist">Only allow on these domains (optional)</label>
+      <textarea
+        id="domainAllowlist"
+        class="settings-textarea"
+        placeholder="example.com&#10;app.example.com"
+      ></textarea>
+      <p class="section-helper">Leave empty to allow all domains.</p>
+      <label class="section-subtitle" for="domainBlocklist">Disable on these domains</label>
+      <textarea
+        id="domainBlocklist"
+        class="settings-textarea"
+        placeholder="private.example.com"
+      ></textarea>
+      <p class="section-helper">One domain or subdomain per line.</p>
+    `;
+    settingsTabContent.appendChild(domainControlSection);
 
     // Add user ID input section
     const userIdSection = document.createElement('div');
@@ -349,6 +378,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         StorageKey.SIMILARITY_THRESHOLD,
         StorageKey.TOP_K,
         StorageKey.TRACK_SEARCHES,
+        StorageKey.ENABLED_DOMAINS,
+        StorageKey.DISABLED_DOMAINS,
       ],
       function (result) {
         const toggleCheckbox = memoryToggleSection.querySelector('#mem0Toggle') as HTMLInputElement;
@@ -401,6 +432,37 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         if (topKInput) {
           topKInput.value = String(topK);
         }
+
+        const domainAllowTextarea = domainControlSection.querySelector(
+          '#domainAllowlist'
+        ) as HTMLTextAreaElement;
+        const domainBlockTextarea = domainControlSection.querySelector(
+          '#domainBlocklist'
+        ) as HTMLTextAreaElement;
+
+        const allowedDomains = Array.isArray(result[StorageKey.ENABLED_DOMAINS])
+          ? (result[StorageKey.ENABLED_DOMAINS] as string[])
+          : typeof result[StorageKey.ENABLED_DOMAINS] === 'string'
+            ? (result[StorageKey.ENABLED_DOMAINS] as string).split(/\r?\n|,/)
+            : [];
+        const blockedDomains = Array.isArray(result[StorageKey.DISABLED_DOMAINS])
+          ? (result[StorageKey.DISABLED_DOMAINS] as string[])
+          : typeof result[StorageKey.DISABLED_DOMAINS] === 'string'
+            ? (result[StorageKey.DISABLED_DOMAINS] as string).split(/\r?\n|,/)
+            : [];
+
+        if (domainAllowTextarea) {
+          domainAllowTextarea.value = allowedDomains
+            .map(d => d.trim())
+            .filter(Boolean)
+            .join('\n');
+        }
+        if (domainBlockTextarea) {
+          domainBlockTextarea.value = blockedDomains
+            .map(d => d.trim())
+            .filter(Boolean)
+            .join('\n');
+        }
       }
     );
 
@@ -419,7 +481,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
       saveSection,
       memoryCountContainer,
       footerToggle,
-      trackSearchSection
+      trackSearchSection,
+      domainControlSection
     );
 
     document.body.appendChild(sidebarContainer);
@@ -454,7 +517,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     autoInjectSection: HTMLElement,
     thresholdSection: HTMLElement,
     topKSection: HTMLElement,
-    trackSearchSection: HTMLElement
+    trackSearchSection: HTMLElement,
+    domainControlSection: HTMLElement
   ): void {
     // Show loading state
     saveBtn.disabled = true;
@@ -475,6 +539,12 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     const trackSearchesCheckbox = trackSearchSection.querySelector(
       '#trackSearchesToggle'
     ) as HTMLInputElement;
+    const domainAllowTextarea = domainControlSection.querySelector(
+      '#domainAllowlist'
+    ) as HTMLTextAreaElement;
+    const domainBlockTextarea = domainControlSection.querySelector(
+      '#domainBlocklist'
+    ) as HTMLTextAreaElement;
 
     const userId = (userIdInput?.value || '').trim();
     const selectedOrgId = orgSelect?.value || '';
@@ -485,6 +555,14 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     const autoInjectEnabled = Boolean(autoInjectCheckbox?.checked);
     const similarityThreshold = parseFloat(thresholdSlider?.value || '0.3');
     const topK = parseInt(topKInput?.value || '10', 10);
+    const enabledDomains = (domainAllowTextarea?.value || '')
+      .split(/\r?\n/)
+      .map(domain => domain.trim())
+      .filter(Boolean);
+    const disabledDomains = (domainBlockTextarea?.value || '')
+      .split(/\r?\n/)
+      .map(domain => domain.trim())
+      .filter(Boolean);
 
     // Prepare settings object
     const settings: SidebarSettings = {
@@ -498,6 +576,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
       similarity_threshold: similarityThreshold,
       top_k: topK,
       track_searches: Boolean(trackSearchesCheckbox?.checked),
+      enabled_domains: enabledDomains.length ? enabledDomains : undefined,
+      disabled_domains: disabledDomains.length ? disabledDomains : undefined,
     };
 
     // Remove undefined values
@@ -562,7 +642,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     saveSection: HTMLElement,
     memoryCountContainer: HTMLElement,
     footerToggle: HTMLElement,
-    trackSearchSection: HTMLElement
+    trackSearchSection: HTMLElement,
+    domainControlSection: HTMLElement
   ): void {
     // Close button
     const closeBtn = sidebarContainer.querySelector('#closeBtn') as HTMLButtonElement;
@@ -624,7 +705,7 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     userDashboardBtn?.addEventListener('click', function () {
       chrome.runtime.sendMessage({
         action: SidebarAction.OPEN_DASHBOARD,
-        url: 'https://app.mem0.ai/dashboard/users',
+        view: 'settings',
       });
     });
 
@@ -671,7 +752,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         autoInjectSection,
         thresholdSection,
         topKSection,
-        trackSearchSection
+        trackSearchSection,
+        domainControlSection
       );
     });
   }
@@ -891,52 +973,57 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
         :root {
-          --bg-dark: #18181b;
-          --bg-card: #27272a;
-          --bg-button: #3b3b3f;
-          --bg-button-hover: #4b4b4f;
-          --text-white: #ffffff;
-          --text-gray: #a1a1aa;
-          --purple: #7a5bf7;
-          --border-color: #27272a;
-          --tag-bg: #3b3b3f;
-          --scrollbar-bg: #18181b;
-          --scrollbar-thumb: #3b3b3f;
-          --success-color: #22c55e;
+          --surface-background: #f8f3ff;
+          --surface-panel: #ffffff;
+          --surface-muted: #f2e8ff;
+          --surface-strong: #e5d8f5;
+          --control-surface: #ede4ff;
+          --control-surface-hover: #d9c9ff;
+          --text-primary: #2d1a45;
+          --text-secondary: #6f5c88;
+          --text-inverse: #ffffff;
+          --accent: #e5007d;
+          --accent-hover: #c30063;
+          --border-color: #e5d8f5;
+          --tag-bg: #f4e9ff;
+          --scrollbar-track: #ede4ff;
+          --scrollbar-thumb: #cdbdf3;
+          --success-color: #1b7b4d;
         }
         
         #mem0-sidebar {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-          position: fixed; 
+          position: fixed;
           top: 60px;
           right: 50px;
           width: 400px;
           height: auto;
           max-height: 85vh;
-          background: var(--bg-dark);
+          background: var(--surface-panel);
           border: 1px solid var(--border-color);
           border-radius: 12px;
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
           padding: 0px;
-          color: var(--text-white);
+          color: var(--text-primary);
           z-index: 2147483647;
           transition: right 0.3s ease-in-out;
           overflow: hidden;
-          box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.5);
+          box-shadow: 0px 18px 48px rgba(59, 33, 108, 0.18);
+          background-image: radial-gradient(circle at top, rgba(229, 0, 125, 0.08), transparent 60%);
         }
         
         .fixed-header {
           box-sizing: border-box;
           width: 100%;
-          background: var(--bg-dark);
+          background: var(--surface-background);
           border-bottom: 1px solid var(--border-color);
         }
-        
+
         .tabs-container {
           padding: 0 16px;
-          background: var(--bg-dark);
+          background: var(--surface-background);
           border-bottom: 1px solid var(--border-color);
         }
         
@@ -950,22 +1037,22 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           padding: 12px 16px;
           background: none;
           border: none;
-          color: var(--text-gray);
+          color: var(--text-secondary);
           font-size: 14px;
-          font-weight: 500;
+          font-weight: 600;
           cursor: pointer;
           transition: color 0.2s ease;
           position: relative;
           border-bottom: 2px solid transparent;
         }
-        
+
         .tab-button.active {
-          color: var(--text-white);
-          border-bottom-color: var(--purple);
+          color: var(--text-primary);
+          border-bottom-color: var(--accent);
         }
-        
+
         .tab-button:hover {
-          color: var(--text-white);
+          color: var(--text-primary);
         }
         
         .tab-content {
@@ -996,21 +1083,33 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           gap: 8px;
           height: 24px;
         }
-        
-        .openmemory-icon {
-          width: 24px;
-          height: 24px;
+
+        .bts-logo-mark {
+          display: inline-flex;
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
+          align-items: center;
+          justify-content: center;
+          background: var(--surface-muted);
+          color: var(--accent);
+          box-shadow: inset 0 0 0 1px var(--surface-strong);
         }
-        
-        .openmemory-logo {
+
+        .bts-logo-mark svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        .sidebar-logo {
           height: 24px;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           font-style: normal;
-          font-weight: 600;
+          font-weight: 700;
           font-size: 20px;
           line-height: 24px;
           letter-spacing: -0.03em;
-          color: var(--text-white);
+          color: var(--text-primary);
         }
         
         .header-buttons {
@@ -1031,13 +1130,13 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           display: flex;
           align-items: center;
           justify-content: center;
-          color: var(--text-gray);
+          color: var(--text-secondary);
           font-size: 20px;
           transition: color 0.2s ease;
         }
-        
+
         .close-button:hover {
-          color: var(--text-white);
+          color: var(--text-primary);
         }
         
         /* Custom scrollbar styles */
@@ -1048,21 +1147,21 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           gap: 24px;
           overflow-y: auto;
           max-height: calc(85vh - 62px - 49px - 60px); /* Subtract header, tab bar, and footer heights */
-          
+
           /* Firefox */
           scrollbar-width: thin;
-          scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+          scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
         }
-        
+
         /* WebKit browsers (Chrome, Safari, Edge) */
         .content::-webkit-scrollbar {
           width: 4px;
         }
-        
+
         .content::-webkit-scrollbar-track {
-          background: var(--scrollbar-bg);
+          background: var(--scrollbar-track);
         }
-        
+
         .content::-webkit-scrollbar-thumb {
           background-color: var(--scrollbar-thumb);
           border-radius: 4px;
@@ -1070,9 +1169,11 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         }
         
         .total-memories {
-          background-color: var(--bg-card);
-          border-radius: 8px;
+          background-color: var(--surface-muted);
+          border-radius: 12px;
           padding: 16px;
+          border: 1px solid var(--border-color);
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
         }
         
         .total-memories-content {
@@ -1082,7 +1183,7 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         }
         
         .total-memories-label {
-          color: var(--text-gray);
+          color: var(--text-secondary);
           font-size: 14px;
           margin-bottom: 4px;
         }
@@ -1094,32 +1195,33 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           font-size: 18px;
           line-height: 140%;
           letter-spacing: -0.03em;
-          color: var(--text-white);
+          color: var(--text-primary);
         }
-        
+
         .memory-count.loading {
-          color: var(--text-gray);
+          color: var(--text-secondary);
           font-size: 16px;
         }
-        
+
         .dashboard-button {
           display: flex;
           flex-direction: row;
           align-items: center;
           padding: 4px 8px;
           gap: 4px;
-          background: var(--bg-button);
-          background-opacity: 0.5;
-          border-radius: 8px;
-          border: none;
+          background: var(--control-surface);
+          border-radius: 999px;
+          border: 1px solid var(--border-color);
           cursor: pointer;
           transition: all 0.2s ease;
-          color: var(--text-white);
+          color: var(--text-primary);
           font-size: 14px;
+          font-weight: 600;
+          box-shadow: 0 8px 20px rgba(59, 33, 108, 0.12);
         }
-        
+
         .dashboard-button:hover {
-          background: var(--bg-button-hover);
+          background: var(--control-surface-hover);
         }
         
         .external-link-icon {
@@ -1142,10 +1244,10 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         
         .section-title {
           font-size: 18px;
-          font-weight: 500;
-          color: var(--text-white);
+          font-weight: 600;
+          color: var(--text-primary);
         }
-        
+
         .section-description {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           font-style: normal;
@@ -1153,7 +1255,7 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           font-size: 14px;
           line-height: 140%;
           letter-spacing: -0.03em;
-          color: var(--text-gray);
+          color: var(--text-secondary);
         }
 
         .switch {
@@ -1176,7 +1278,7 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           left: 0;
           right: 0;
           bottom: 0;
-          background-color: var(--bg-card);
+          background-color: var(--control-surface);
           transition: .4s;
           border-radius: 34px;
         }
@@ -1194,11 +1296,11 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         }
         
         input:checked + .slider {
-          background-color: var(--purple);
+          background-color: var(--accent);
         }
-        
+
         input:focus + .slider {
-          box-shadow: 0 0 1px var(--purple);
+          box-shadow: 0 0 1px var(--accent);
         }
         
         input:checked + .slider:before {
@@ -1212,12 +1314,14 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         }
         
         .memory-card {
-          background-color: var(--bg-card);
-          border-radius: 8px;
+          background-color: var(--surface-panel);
+          border-radius: 12px;
           padding: 12px;
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
+          border: 1px solid var(--border-color);
+          box-shadow: 0 8px 18px rgba(59, 33, 108, 0.08);
         }
         
         .memory-content {
@@ -1226,7 +1330,7 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         }
         
         .memory-text {
-          color: var(--text-gray);
+          color: var(--text-primary);
           font-size: 14px;
           margin: 0 0 8px 0;
         }
@@ -1240,10 +1344,11 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         
         .memory-category {
           background-color: var(--tag-bg);
-          color: var(--text-white);
+          color: var(--text-primary);
           font-size: 12px;
+          font-weight: 600;
           padding: 2px 8px;
-          border-radius: 4px;
+          border-radius: 999px;
         }
         
         .memory-actions {
@@ -1255,20 +1360,21 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         .memory-action-button {
           background: none;
           border: none;
-          color: var(--text-gray);
+          color: var(--text-secondary);
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: color 0.2s;
+          transition: all 0.2s;
           width: 24px;
           height: 24px;
-          border-radius: 4px;
+          border-radius: 6px;
         }
-        
+
         .memory-action-button:hover {
-          color: var(--text-white);
-          background-color: var(--bg-button);
+          color: var(--text-primary);
+          background-color: var(--control-surface);
+          box-shadow: inset 0 0 0 1px var(--border-color);
         }
         
         .memory-action-button.copied {
@@ -1283,7 +1389,7 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         }
         
         .no-memories, .memory-error {
-          color: var(--text-gray);
+          color: var(--text-secondary);
           text-align: center;
           font-style: italic;
           padding: 20px 0;
@@ -1299,33 +1405,35 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         
         .shortcut {
           padding: 6px 12px;
-          background-color: var(--bg-card);
-          color: var(--text-gray);
-          border-radius: 8px;
+          background-color: var(--surface-muted);
+          color: var(--text-secondary);
+          border-radius: 999px;
           font-size: 14px;
+          border: 1px solid var(--border-color);
         }
-        
+
         .logout-button {
           display: flex;
           flex-direction: row;
           align-items: center;
           padding: 6px 16px;
-          background: var(--bg-button);
-          border-radius: 8px;
+          background: var(--accent);
+          border-radius: 999px;
           border: none;
           cursor: pointer;
           transition: all 0.2s ease;
-          color: var(--text-white);
+          color: var(--text-inverse);
           font-size: 14px;
+          font-weight: 600;
         }
-        
+
         .logout-button:hover {
-          background: var(--bg-button-hover);
+          background: var(--accent-hover);
         }
-        
+
         .loader {
-          border: 2px solid var(--bg-button);
-          border-top: 2px solid var(--purple);
+          border: 2px solid var(--control-surface);
+          border-top: 2px solid var(--accent);
           border-radius: 50%;
           width: 20px;
           height: 20px;
@@ -1350,42 +1458,76 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           margin-top: 16px;
         }
         
+        .section-subtitle {
+          display: block;
+          margin-bottom: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+
+        .section-helper {
+          margin: 4px 0 12px;
+          font-size: 12px;
+          color: var(--text-secondary);
+        }
+
         .settings-input, .settings-select {
           width: 100%;
           padding: 12px 16px;
-          background: var(--bg-card);
+          background: var(--surface-panel);
           border: 1px solid var(--border-color);
-          border-radius: 8px;
-          color: var(--text-white);
+          border-radius: 12px;
+          color: var(--text-primary);
           font-size: 14px;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           transition: border-color 0.2s ease, background-color 0.2s ease;
           box-sizing: border-box;
         }
-        
+
         .settings-input:focus, .settings-select:focus {
           outline: none;
-          border-color: var(--purple);
-          background: var(--bg-button);
+          border-color: var(--accent);
+          background: var(--control-surface);
         }
-        
+
         .settings-input::placeholder {
-          color: var(--text-gray);
+          color: var(--text-secondary);
         }
-        
+
+        .settings-textarea {
+          width: 100%;
+          min-height: 90px;
+          padding: 12px 16px;
+          background: var(--surface-panel);
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          color: var(--text-primary);
+          font-size: 13px;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          resize: vertical;
+          box-sizing: border-box;
+        }
+
+        .settings-textarea:focus {
+          outline: none;
+          border-color: var(--accent);
+          background: var(--control-surface);
+        }
+
         .settings-select option {
-          background: var(--bg-card);
-          color: var(--text-white);
+          background: var(--surface-panel);
+          color: var(--text-primary);
         }
-        
+
         .settings-select:hover {
-          border-color: var(--text-gray);
+          border-color: var(--accent);
         }
-        
+
         .link-button {
           background: none;
           border: none;
-          color: var(--text-gray);
+          color: var(--text-secondary);
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -1395,21 +1537,22 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           border-radius: 4px;
           transition: all 0.2s ease;
         }
-        
+
         .link-button:hover {
-          color: var(--text-white);
-          background: var(--bg-button);
+          color: var(--text-primary);
+          background: var(--control-surface);
+          box-shadow: inset 0 0 0 1px var(--border-color);
         }
-        
+
         .save-button {
           width: 100%;
           padding: 12px 24px;
-          background: var(--purple);
+          background: var(--accent);
           border: none;
-          border-radius: 8px;
-          color: var(--text-white);
+          border-radius: 999px;
+          color: var(--text-inverse);
           font-size: 14px;
-          font-weight: 500;
+          font-weight: 600;
           cursor: pointer;
           transition: background-color 0.2s ease;
           display: flex;
@@ -1420,11 +1563,12 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         }
         
         .save-button:hover:not(:disabled) {
-          background: #6d4ed6;
+          background: var(--accent-hover);
         }
-        
+
         .save-button:disabled {
-          background: var(--bg-button);
+          background: var(--control-surface);
+          color: var(--text-secondary);
           cursor: not-allowed;
         }
         
@@ -1435,8 +1579,8 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         }
         
         .mini-loader {
-          border: 2px solid var(--bg-button);
-          border-top: 2px solid var(--text-white);
+          border: 2px solid var(--control-surface);
+          border-top: 2px solid var(--accent);
           border-radius: 50%;
           width: 16px;
           height: 16px;
@@ -1464,7 +1608,7 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         }
         
         .threshold-value {
-          color: var(--purple);
+          color: var(--accent);
           font-weight: 600;
           font-size: 14px;
         }
@@ -1478,46 +1622,46 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         .threshold-slider {
           width: 100%;
           height: 6px;
-          background: var(--bg-card);
+          background: var(--control-surface);
           border-radius: 3px;
           outline: none;
           appearance: none;
           -webkit-appearance: none;
           cursor: pointer;
         }
-        
+
         .threshold-slider::-webkit-slider-thumb {
           appearance: none;
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: var(--purple);
+          background: var(--accent);
           cursor: pointer;
-          border: 2px solid var(--bg-dark);
-          box-shadow: 0 0 0 1px var(--purple);
+          border: 2px solid var(--surface-panel);
+          box-shadow: 0 0 0 1px var(--accent);
         }
-        
+
         .threshold-slider::-moz-range-thumb {
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: var(--purple);
+          background: var(--accent);
           cursor: pointer;
-          border: 2px solid var(--bg-dark);
-          box-shadow: 0 0 0 1px var(--purple);
+          border: 2px solid var(--surface-panel);
+          box-shadow: 0 0 0 1px var(--accent);
         }
-        
+
         .threshold-slider::-webkit-slider-track {
           width: 100%;
           height: 6px;
-          background: var(--bg-card);
+          background: var(--control-surface);
           border-radius: 3px;
         }
-        
+
         .threshold-slider::-moz-range-track {
           width: 100%;
           height: 6px;
-          background: var(--bg-card);
+          background: var(--control-surface);
           border-radius: 3px;
           border: none;
         }
@@ -1527,18 +1671,18 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         }
         
         .threshold-slider:focus::-webkit-slider-thumb {
-          box-shadow: 0 0 0 2px var(--purple);
+          box-shadow: 0 0 0 2px var(--accent);
         }
-        
+
         .threshold-slider:focus::-moz-range-thumb {
-          box-shadow: 0 0 0 2px var(--purple);
+          box-shadow: 0 0 0 2px var(--accent);
         }
-        
+
         .slider-labels {
           display: flex;
           justify-content: space-between;
           font-size: 12px;
-          color: var(--text-gray);
+          color: var(--text-secondary);
           margin-top: 4px;
         }
         
@@ -1580,11 +1724,9 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
   }
 
   function openDashboard() {
-    chrome.storage.sync.get([StorageKey.USER_ID], function () {
-      chrome.runtime.sendMessage({
-        action: SidebarAction.OPEN_DASHBOARD,
-        url: `https://app.mem0.ai/dashboard/requests`,
-      });
+    chrome.runtime.sendMessage({
+      action: SidebarAction.OPEN_DASHBOARD,
+      view: 'memories',
     });
   }
 
@@ -1673,12 +1815,10 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
         e.stopPropagation();
         const memoryId = this.getAttribute('data-id');
         if (memoryId) {
-          chrome.storage.sync.get([StorageKey.USER_ID], function (data) {
-            const userId = data.user_id || 'chrome-extension-user';
-            chrome.runtime.sendMessage({
-              action: SidebarAction.OPEN_DASHBOARD,
-              url: `https://app.mem0.ai/dashboard/user/${userId}?memoryId=${memoryId}`,
-            });
+          chrome.runtime.sendMessage({
+            action: SidebarAction.OPEN_DASHBOARD,
+            memoryId,
+            view: 'memories',
           });
         }
       });

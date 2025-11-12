@@ -8,6 +8,7 @@ import {
 import { Category, Provider } from './types/providers';
 import type { Settings } from './types/settings';
 import { StorageKey } from './types/storage';
+import { isMemoryAllowedForUrl } from './utils/domain_rules';
 
 export function initContextMenuMemory(): void {
   try {
@@ -56,6 +57,12 @@ export function initContextMenuMemory(): void {
 
       const title = tab.title || '';
       const url = info.pageUrl || tab.url || '';
+
+      const allowed = await isMemoryAllowedForUrl(url);
+      if (!allowed) {
+        toast(tabId, 'OpenMemory is disabled on this site', ToastVariant.ERROR);
+        return;
+      }
 
       let ctx = await requestSelectionContext(tabId);
       if (ctx && ctx.error) {

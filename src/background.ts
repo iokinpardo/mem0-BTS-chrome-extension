@@ -9,8 +9,17 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((request: OpenDashboardMessage) => {
-  if (request.action === SidebarAction.OPEN_DASHBOARD && request.url) {
-    chrome.tabs.create({ url: request.url });
+  if (request.action === SidebarAction.OPEN_DASHBOARD) {
+    const baseUrl = chrome.runtime.getURL('src/dashboard.html');
+    const params = new URLSearchParams();
+    if (request.memoryId) {
+      params.set('memoryId', request.memoryId);
+    }
+    if (request.view) {
+      params.set('view', request.view);
+    }
+    const url = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+    chrome.tabs.create({ url });
   }
   return undefined;
 });

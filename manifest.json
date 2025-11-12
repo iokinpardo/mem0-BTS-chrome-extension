@@ -79,7 +79,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/*"],
+      "resources": ["icons/*", "src/dashboard.html"],
       "matches": ["<all_urls>"]
     }
   ]

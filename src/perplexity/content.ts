@@ -4,6 +4,7 @@ import type { MemoryItem, MemorySearchItem, OptionalApiParams } from '../types/m
 import { SidebarAction } from '../types/messages';
 import { type StorageItems, StorageKey } from '../types/storage';
 import { createOrchestrator, type SearchStorage } from '../utils/background_search';
+import { isMemoryAllowedForUrl } from '../utils/domain_rules';
 import { OPENMEMORY_PROMPTS } from '../utils/llm_prompts';
 import { SITE_CONFIG } from '../utils/site_config';
 import { getBrowser, sendExtensionEvent } from '../utils/util_functions';
@@ -2073,10 +2074,14 @@ function updateInputWithMemories() {
 }
 
 // Add a function to get the memory_enabled state
-function getMemoryEnabledState(): Promise<boolean> {
-  return new Promise<boolean>(resolve => {
+async function getMemoryEnabledState(): Promise<boolean> {
+  const allowed = await isMemoryAllowedForUrl(window.location.href);
+  if (!allowed) {
+    return false;
+  }
+  return await new Promise<boolean>(resolve => {
     chrome.storage.sync.get([StorageKey.MEMORY_ENABLED], function (result) {
-      resolve(result.memory_enabled !== false); // Default to true if not set
+      resolve(result[StorageKey.MEMORY_ENABLED] !== false);
     });
   });
 }

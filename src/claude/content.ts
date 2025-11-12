@@ -5,6 +5,7 @@ import type { MemoryItem, MemorySearchItem, OptionalApiParams } from '../types/m
 import { SidebarAction } from '../types/messages';
 import { type StorageData, StorageKey } from '../types/storage';
 import { createOrchestrator, type SearchStorage } from '../utils/background_search';
+import { isMemoryAllowedForUrl } from '../utils/domain_rules';
 import { OPENMEMORY_PROMPTS } from '../utils/llm_prompts';
 import { SITE_CONFIG } from '../utils/site_config';
 import { getBrowser, sendExtensionEvent } from '../utils/util_functions';
@@ -251,7 +252,11 @@ let currentModalUnplace: (() => void) | null = null;
 
 // Function to get memory enabled state from storage
 async function getMemoryEnabledState() {
-  return new Promise(resolve => {
+  const allowed = await isMemoryAllowedForUrl(window.location.href);
+  if (!allowed) {
+    return false;
+  }
+  return await new Promise(resolve => {
     // Check if extension context is valid
     if (!chrome || !chrome.storage || !chrome.storage.sync) {
       console.log('⚠️ Chrome extension context invalid, defaulting to enabled');
@@ -2300,8 +2305,8 @@ async function handleMem0Modal(
         const val = (el.textContent || el.value || '').trim();
         return val || message;
       })();
-      console.log("Claude modal search for:", rawInput);
-      console.log("Cache state:", claudeSearch.getState()); 
+      console.log('Claude modal search for:', rawInput);
+      console.log('Cache state:', claudeSearch.getState());
       claudeSearch.runImmediate(rawInput);
     } catch (_) {
       claudeSearch.runImmediate(message);
@@ -2393,22 +2398,21 @@ function getInputValue(): string | null {
 let claudeBackgroundSearchHandler: (() => void) | null = null;
 
 function hookClaudeBackgroundSearchTyping() {
-  
   const inputElement =
     document.querySelector('div[contenteditable="true"]') ||
     document.querySelector('textarea') ||
     document.querySelector('p[data-placeholder="How can I help you today?"]') ||
     document.querySelector('p[data-placeholder="Reply to Claude..."]');
-  
+
   if (!inputElement) {
     return;
   }
-  
+
   if (inputElement.dataset.claudeBackgroundHooked) {
-    return; 
+    return;
   }
 
-  inputElement.dataset.claudeBackgroundHooked = 'true'; 
+  inputElement.dataset.claudeBackgroundHooked = 'true';
 
   if (!claudeBackgroundSearchHandler) {
     claudeBackgroundSearchHandler = function () {
@@ -2416,8 +2420,10 @@ function hookClaudeBackgroundSearchTyping() {
       try {
         const MEM0_PLAIN = OPENMEMORY_PROMPTS.memory_header_plain_regex;
         text = text.replace(MEM0_PLAIN, '').trim();
-      } catch {}
-      console.log("Claude background search triggered:", text); 
+      } catch (error) {
+        console.debug('Failed to strip Claude memory header', error);
+      }
+      console.log('Claude background search triggered:', text);
       claudeSearch.setText(text);
     };
   }
@@ -2441,7 +2447,7 @@ async function updateMemoryEnabled() {
 function initializeMem0Integration(): void {
   console.log('🚀 initializeMem0Integration started');
   updateMemoryEnabled();
-  hookClaudeBackgroundSearchTyping(); 
+  hookClaudeBackgroundSearchTyping();
   if (!(OPENMEMORY_UI && OPENMEMORY_UI.mountOnEditorFocus)) {
     // addMem0Button(); // Removed: OPENMEMORY_UI handles icon mounting
   }
@@ -3458,7 +3464,7 @@ function detectNavigation() {
       // Re-initialize conversation history from new DOM
       initializeConversationHistoryFromDOM();
 
-      hookClaudeBackgroundSearchTyping(); 
+      hookClaudeBackgroundSearchTyping();
 
       // Re-add buttons and listeners
       if (!(OPENMEMORY_UI && OPENMEMORY_UI.mountOnEditorFocus)) {

@@ -4,6 +4,7 @@ import type { MemoryItem, MemorySearchItem, OptionalApiParams } from '../types/m
 import { SidebarAction } from '../types/messages';
 import { StorageKey } from '../types/storage';
 import { createOrchestrator, type SearchStorage } from '../utils/background_search';
+import { isMemoryAllowedForUrl } from '../utils/domain_rules';
 import { OPENMEMORY_PROMPTS } from '../utils/llm_prompts';
 import { SITE_CONFIG } from '../utils/site_config';
 import { getBrowser, sendExtensionEvent } from '../utils/util_functions';
@@ -571,16 +572,17 @@ function initializeMem0Integration(): void {
 }
 
 async function getMemoryEnabledState(): Promise<boolean> {
-  return new Promise<boolean>(resolve => {
+  const allowed = await isMemoryAllowedForUrl(window.location.href);
+  if (!allowed) {
+    return false;
+  }
+  return await new Promise<boolean>(resolve => {
     chrome.storage.sync.get(
       [StorageKey.MEMORY_ENABLED, StorageKey.API_KEY, StorageKey.ACCESS_TOKEN],
       data => {
-        // Check if memory is enabled AND if we have auth credentials
-        const hasAuth = !!data.apiKey || !!data.access_token;
-        const memoryEnabled = !!data.memory_enabled;
-
-        // Only consider logged in if both memory is enabled and auth credentials exist
-        resolve(!!(memoryEnabled && hasAuth));
+        const hasAuth = Boolean(data.apiKey) || Boolean(data.access_token);
+        const memoryEnabled = data[StorageKey.MEMORY_ENABLED] !== false;
+        resolve(Boolean(memoryEnabled && hasAuth));
       }
     );
   });
