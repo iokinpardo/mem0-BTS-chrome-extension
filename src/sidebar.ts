@@ -108,14 +108,12 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
     // Create fixed header
     const fixedHeader = document.createElement('div');
     fixedHeader.className = 'fixed-header';
+    const logoSrc = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
     fixedHeader.innerHTML = `
         <div class="header">
           <div class="logo-container" aria-label="BTS Me-mory">
             <span class="bts-logo-mark" aria-hidden="true">
-              <svg viewBox="0 0 140 160" role="img" focusable="false">
-                <path fill="currentColor" d="M20 18 64 2v156L20 142z"></path>
-                <path fill="currentColor" d="m120 18-44-16v156l44-16z"></path>
-              </svg>
+              <img src="${logoSrc}" alt="" />
             </span>
             <span class="sidebar-logo">BTS Me-mory</span>
           </div>
@@ -1096,9 +1094,10 @@ import { getBrowser, sendExtensionEvent } from './utils/util_functions';
           box-shadow: inset 0 0 0 1px var(--surface-strong);
         }
 
-        .bts-logo-mark svg {
+        .bts-logo-mark img {
           width: 20px;
           height: 20px;
+          object-fit: contain;
         }
 
         .sidebar-logo {
