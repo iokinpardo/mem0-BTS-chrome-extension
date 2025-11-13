@@ -51,6 +51,12 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Usage example:** Open the BTS Me-mory dashboard, toggle the in-page sidebar, or click the extension icon to view the BTS-styled interfaces featuring the refreshed logo and copy.
 - **Dependencies / breaking changes:** No new dependencies; purely visual update.
 
+### BTS extension card branding
+- **Feature name:** BTS extension card branding
+- **Purpose:** Keep the Chrome extensions page in sync with the in-product experience by renaming the extension card and using the BTS Me-mory isotipo as the toolbar and listing icon.
+- **Usage example:** Visit `chrome://extensions`, locate the BTS Me-mory card, and notice the new "BTS Me-mory 1.0.0" title, descriptive copy, and BTS-branded icon that now match the popup and sidebar UI.
+- **Dependencies / breaking changes:** No additional dependencies; relies on the bundled `icons/Logo-BTS-01_isotipo-1.png` asset for every icon size.
+
 ### Category-aware filtering
 - **Feature name:** Category-aware filtering
 - **Purpose:** Surface the total number of memories within each category so BTS teams can immediately gauge relevance before switching filters.
