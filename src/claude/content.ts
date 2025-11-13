@@ -373,7 +373,7 @@ if (inputToolsMenuButton && !hasAnyMem0Button) {
   mem0Button.setAttribute('aria-label', 'Add memories to your prompt');
 
   const mem0Icon = document.createElement('img');
-  mem0Icon.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+  mem0Icon.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   mem0Icon.style.width = '16px';
   mem0Icon.style.height = '16px';
   mem0Icon.style.borderRadius = '50%';
@@ -521,7 +521,7 @@ if (inputToolsMenuButton && !hasAnyMem0Button) {
   mem0Button.setAttribute('aria-label', 'Add memories to your prompt');
 
   const mem0Icon = document.createElement('img');
-  mem0Icon.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+  mem0Icon.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   mem0Icon.style.width = '16px';
   mem0Icon.style.height = '16px';
   mem0Icon.style.borderRadius = '50%';
@@ -636,7 +636,7 @@ if (inputToolsMenuButton && !hasAnyMem0Button) {
       mem0Button.setAttribute('aria-label', 'Add memories to your prompt');
 
       const mem0Icon = document.createElement('img');
-      mem0Icon.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+      mem0Icon.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
       mem0Icon.style.width = '20px';
       mem0Icon.style.height = '20px';
       mem0Icon.style.borderRadius = '50%';
@@ -1023,7 +1023,7 @@ function createMemoryModal(
 
   // Add Mem0 logo
   const logoImg = document.createElement('img');
-  logoImg.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logoImg.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logoImg.style.cssText = `
     width: 26px;
     height: 26px;
@@ -2586,7 +2586,7 @@ function initializeMem0Integration(): void {
     let btn = document.createElement('button');
     btn.className = 'mem0-btn';
     let img = document.createElement('img');
-    img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+    img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
     let dot = document.createElement('div');
     dot.className = 'dot';
     btn.appendChild(img);
@@ -2926,7 +2926,7 @@ function showLoginPopup() {
   `;
 
   const logo = document.createElement('img');
-  logo.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logo.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logo.style.cssText = `
     width: 24px;
     height: 24px;
@@ -2935,7 +2935,7 @@ function showLoginPopup() {
   `;
 
   const logoDark = document.createElement('img');
-  logoDark.src = chrome.runtime.getURL('icons/mem0-icon-black.png');
+  logoDark.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logoDark.style.cssText = `
     width: 24px;
     height: 24px;
