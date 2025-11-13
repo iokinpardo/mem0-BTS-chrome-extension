@@ -35,6 +35,20 @@ let inputValueCopy: string = '';
 
 let currentModalSourceButtonId: string | null = null;
 
+const BTS_BRAND = {
+  background: '#f8f3ff',
+  panel: '#ffffff',
+  mutedPanel: '#f2e9ff',
+  textPrimary: '#2d1a45',
+  textSecondary: '#6f5c88',
+  textMuted: '#8b78a9',
+  accent: '#e5007d',
+  accentHover: '#c30063',
+  accentSoft: '#fbe1f0',
+  border: '#e5d8f5',
+  shadow: '0 24px 60px rgba(92, 58, 129, 0.18)',
+};
+
 const chatgptSearch = createOrchestrator({
   fetch: async function (query: string, opts: { signal?: AbortSignal }) {
     const data = await new Promise<SearchStorage>(resolve => {
@@ -284,19 +298,20 @@ function createMemoryModal(
   // Create modal container with positioning
   const modalContainer = document.createElement('div');
   modalContainer.style.cssText = `
-    background-color: #1C1C1E;
-    border-radius: 12px;
+    background: radial-gradient(circle at top, rgba(229, 0, 125, 0.12), transparent 65%),
+      ${BTS_BRAND.panel};
+    border-radius: 18px;
     width: ${modalWidth}px;
     height: ${modalHeight}px;
     display: flex;
     flex-direction: column;
-    color: white;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    color: ${BTS_BRAND.textPrimary};
+    box-shadow: ${BTS_BRAND.shadow};
     position: absolute;
     top: ${topPosition}px;
     left: ${leftPosition}px;
     pointer-events: auto;
-    border: 1px solid #27272A;
+    border: 1px solid ${BTS_BRAND.border};
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow: hidden;
   `;
@@ -306,12 +321,13 @@ function createMemoryModal(
   modalHeader.style.cssText = `
     display: flex;
     align-items: center;
-    padding: 10px 16px;
+    padding: 14px 20px;
     justify-content: space-between;
-    background-color: #232325;
+    background: linear-gradient(90deg, rgba(229, 0, 125, 0.1), rgba(248, 243, 255, 0.95));
     flex-shrink: 0;
     cursor: move;
     user-select: none;
+    border-bottom: 1px solid ${BTS_BRAND.border};
   `;
 
   // Create header left section with just the logo
@@ -324,21 +340,25 @@ function createMemoryModal(
 
   // Add Mem0 logo (updated to SVG)
   const logoImg = document.createElement('img');
-  logoImg.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logoImg.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logoImg.style.cssText = `
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    margin-right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    margin-right: 10px;
+    padding: 2px;
+    background: ${BTS_BRAND.mutedPanel};
+    border: 1px solid ${BTS_BRAND.border};
   `;
 
   // Add "OpenMemory" title
   const title = document.createElement('div');
-  title.textContent = 'OpenMemory';
+  title.textContent = 'BTS Me-mory';
   title.style.cssText = `
-    font-size: 16px;
-    font-weight: 600;
-    color: white;
+    font-size: 17px;
+    font-weight: 700;
+    color: ${BTS_BRAND.textPrimary};
+    letter-spacing: 0.01em;
   `;
 
   // Create header right section
@@ -356,16 +376,26 @@ function createMemoryModal(
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 5px 16px;
+    padding: 6px 18px;
     gap: 8px;
-    background-color: white;
+    background-color: ${BTS_BRAND.accent};
     border: none;
-    border-radius: 8px;
+    border-radius: 999px;
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
-    color: black;
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(229, 0, 125, 0.3);
+    transition: background-color 0.2s ease, transform 0.2s ease;
   `;
+  addToPromptBtn.addEventListener('mouseenter', () => {
+    addToPromptBtn.style.backgroundColor = BTS_BRAND.accentHover;
+    addToPromptBtn.style.transform = 'translateY(-1px)';
+  });
+  addToPromptBtn.addEventListener('mouseleave', () => {
+    addToPromptBtn.style.backgroundColor = BTS_BRAND.accent;
+    addToPromptBtn.style.transform = 'translateY(0)';
+  });
   addToPromptBtn.textContent = 'Add to Prompt';
 
   // Add arrow icon to button
@@ -387,7 +417,7 @@ function createMemoryModal(
     opacity: 0.6;
     transition: opacity 0.2s;
   `;
-  settingsBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" xmlns="http://www.w3.org/2000/svg">
+  settingsBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${BTS_BRAND.textPrimary}" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`;
@@ -484,7 +514,7 @@ function createMemoryModal(
   memoriesCounter.style.cssText = `
     font-size: 16px;
     font-weight: 600;
-    color: #FFFFFF;
+    color: ${BTS_BRAND.textPrimary};
     margin-top: 16px;
     flex-shrink: 0;
   `;
@@ -530,8 +560,8 @@ function createMemoryModal(
         align-items: flex-start;
         justify-content: space-between;
         padding: 12px;
-        background-color: #27272A;
-        border-radius: 8px;
+        background-color: ${BTS_BRAND.mutedPanel};
+        border-radius: 12px;
         height: 72px;
         flex-shrink: 0;
         animation: pulse 1.5s infinite ease-in-out;
@@ -539,7 +569,7 @@ function createMemoryModal(
 
       const skeletonText = document.createElement('div');
       skeletonText.style.cssText = `
-        background-color: #383838;
+        background-color: ${BTS_BRAND.border};
         border-radius: 4px;
         height: 14px;
         width: 85%;
@@ -548,7 +578,7 @@ function createMemoryModal(
 
       const skeletonText2 = document.createElement('div');
       skeletonText2.style.cssText = `
-        background-color: #383838;
+        background-color: ${BTS_BRAND.border};
         border-radius: 4px;
         height: 14px;
         width: 65%;
@@ -566,7 +596,7 @@ function createMemoryModal(
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background-color: #383838;
+        background-color: ${BTS_BRAND.border};
       `;
 
       const skeletonButton2 = document.createElement('div');
@@ -574,7 +604,7 @@ function createMemoryModal(
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background-color: #383838;
+        background-color: ${BTS_BRAND.border};
       `;
 
       skeletonActions.appendChild(skeletonButton1);
@@ -629,7 +659,7 @@ function createMemoryModal(
     contentWrapper.style.scrollbarWidth = 'none';
     // contentWrapper.style.msOverflowStyle is non-standard; omit to satisfy TS
     contentWrapper.style.cssText += '::-webkit-scrollbar { display: none; }';
-    memoryContainer.style.backgroundColor = '#1C1C1E';
+    memoryContainer.style.backgroundColor = BTS_BRAND.panel;
     memoryContainer.style.maxHeight = '300px'; // Allow expansion but within container
     memoryContainer.style.overflow = 'hidden';
     removeButton.style.display = 'flex';
@@ -651,7 +681,7 @@ function createMemoryModal(
     memoryText.style.webkitLineClamp = '2';
     memoryText.style.height = '42px';
     contentWrapper.style.overflowY = 'visible';
-    memoryContainer.style.backgroundColor = '#27272A';
+    memoryContainer.style.backgroundColor = BTS_BRAND.mutedPanel;
     memoryContainer.style.maxHeight = '72px';
     memoryContainer.style.overflow = 'hidden';
     removeButton.style.display = 'none';
@@ -708,22 +738,23 @@ function createMemoryModal(
         flex-direction: row;
         align-items: flex-start;
         justify-content: space-between;
-        padding: 12px; 
-        background-color: #27272A;
-        border-radius: 8px;
+        padding: 14px;
+        background-color: ${BTS_BRAND.mutedPanel};
+        border-radius: 14px;
         cursor: pointer;
         transition: all 0.2s ease;
-        min-height: 72px; 
-        max-height: 72px; 
+        min-height: 72px;
+        max-height: 72px;
         overflow: hidden;
         flex-shrink: 0;
+        border: 1px solid ${BTS_BRAND.border};
       `;
 
       const memoryText = document.createElement('div');
       memoryText.style.cssText = `
         font-size: 14px;
         line-height: 1.5;
-        color: #D4D4D8;
+        color: ${BTS_BRAND.textSecondary};
         flex-grow: 1;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -747,11 +778,12 @@ function createMemoryModal(
       addButton.style.cssText = `
         border: none;
         cursor: pointer;
-        padding: 4px;
-        background:rgb(66, 66, 69);
-        color:rgb(199, 199, 201);
-        border-radius: 100%;
+        padding: 6px;
+        background:${BTS_BRAND.accent};
+        color:#fff;
+        border-radius: 999px;
         transition: all 0.2s ease;
+        box-shadow: 0 10px 20px rgba(229, 0, 125, 0.25);
       `;
 
       addButton.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -797,7 +829,7 @@ function createMemoryModal(
         border: none;
         cursor: pointer;
         padding: 4px;
-        color: #A1A1AA;
+        color: ${BTS_BRAND.textMuted};
       `;
       menuButton.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
         <circle cx="12" cy="12" r="2"/>
@@ -814,10 +846,10 @@ function createMemoryModal(
         display: none;
         align-items: center;
         gap: 6px;
-        background:rgb(66, 66, 69);
-        color:rgb(199, 199, 201);
+        background:${BTS_BRAND.accentSoft};
+        color:${BTS_BRAND.accent};
         border-radius: 8px;
-        padding: 2px 4px;
+        padding: 4px 8px;
         border: none;
         cursor: pointer;
         font-size: 13px;
@@ -883,10 +915,14 @@ function createMemoryModal(
 
       // Add hover effect
       memoryContainer.addEventListener('mouseenter', () => {
-        memoryContainer.style.backgroundColor = isExpanded.value ? '#18181B' : '#323232';
+        memoryContainer.style.backgroundColor = isExpanded.value
+          ? BTS_BRAND.panel
+          : BTS_BRAND.background;
       });
       memoryContainer.addEventListener('mouseleave', () => {
-        memoryContainer.style.backgroundColor = isExpanded.value ? '#1C1C1E' : '#27272A';
+        memoryContainer.style.backgroundColor = isExpanded.value
+          ? BTS_BRAND.panel
+          : BTS_BRAND.mutedPanel;
       });
     }
 
@@ -919,7 +955,7 @@ function createMemoryModal(
     `;
 
     const emptyIcon = document.createElement('div');
-    emptyIcon.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#71717A" xmlns="http://www.w3.org/2000/svg">
+    emptyIcon.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="${BTS_BRAND.textMuted}" xmlns="http://www.w3.org/2000/svg">
       <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v10a2 2 0 01-2 2h-4M3 21h4a2 2 0 002-2v-4m-6 6V9m18 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
     emptyIcon.style.marginBottom = '16px';
@@ -927,7 +963,7 @@ function createMemoryModal(
     const emptyText = document.createElement('div');
     emptyText.textContent = 'No relevant memories found';
     emptyText.style.cssText = `
-      color: #71717A;
+      color: ${BTS_BRAND.textSecondary};
       font-size: 14px;
       font-weight: 500;
     `;
@@ -1638,7 +1674,7 @@ function setupAutoInjectPrefetch() {
           let btn = document.createElement('button');
           btn.className = 'mem0-btn';
           let img = document.createElement('img');
-          img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+          img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
           let dot = document.createElement('div');
           dot.className = 'dot';
           btn.appendChild(img);
@@ -1732,7 +1768,7 @@ function setupAutoInjectPrefetch() {
       let btn = document.createElement('button');
       btn.className = 'mem0-btn';
       let img = document.createElement('img');
-      img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+      img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
       let dot = document.createElement('div');
       dot.className = 'dot';
       btn.appendChild(img);
@@ -1824,7 +1860,7 @@ function setupAutoInjectPrefetch() {
           let btn = document.createElement('button');
           btn.className = 'mem0-btn';
           let img = document.createElement('img');
-          img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+          img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
           let dot = document.createElement('div');
           dot.className = 'dot';
           btn.appendChild(img);
@@ -1980,7 +2016,7 @@ function addSyncButton(): void {
       syncButton.style.marginRight = '8px';
 
       const syncIcon = document.createElement('img');
-      syncIcon.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+      syncIcon.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
       syncIcon.style.width = '16px';
       syncIcon.style.height = '16px';
       syncIcon.style.marginRight = '8px';
@@ -2419,7 +2455,7 @@ function showLoginPopup() {
   `;
 
   const logo = document.createElement('img');
-  logo.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logo.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logo.style.cssText = `
     width: 24px;
     height: 24px;
@@ -2428,7 +2464,7 @@ function showLoginPopup() {
   `;
 
   const logoDark = document.createElement('img');
-  logoDark.src = chrome.runtime.getURL('icons/mem0-icon-black.png');
+  logoDark.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logoDark.style.cssText = `
     width: 24px;
     height: 24px;

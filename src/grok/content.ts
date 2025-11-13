@@ -354,7 +354,7 @@ function initializeMem0Integration(): void {
         let btn = document.createElement('button');
         btn.className = 'mem0-btn';
         let img = document.createElement('img');
-        img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+        img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
         let dot = document.createElement('div');
         dot.className = 'dot';
         btn.appendChild(img);
@@ -439,7 +439,7 @@ function initializeMem0Integration(): void {
         let btn = document.createElement('button');
         btn.className = 'mem0-btn';
         let img = document.createElement('img');
-        img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+        img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
         let dot = document.createElement('div');
         dot.className = 'dot';
         btn.appendChild(img);
@@ -625,7 +625,7 @@ function initializeMem0Integration(): void {
 
 //     // Create button content - icon only, similar to Claude style
 //     mem0Button.innerHTML = `
-//       <img src="${chrome.runtime.getURL('icons/mem0-claude-icon-p.png')}"
+//       <img src="${chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png')}"
 //       width="18" height="18" style="display: block;">
 //     `;
 
@@ -878,7 +878,7 @@ function createMemoryModal(memoryItems: MemoryItem[], isLoading: boolean = false
         let btn = document.createElement('button');
         btn.className = 'mem0-btn';
         let img = document.createElement('img');
-        img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+        img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
         let dot = document.createElement('div');
         dot.className = 'dot';
         btn.appendChild(img);
@@ -917,7 +917,7 @@ function createMemoryModal(memoryItems: MemoryItem[], isLoading: boolean = false
         let btn = document.createElement('button');
         btn.className = 'mem0-btn';
         let img = document.createElement('img');
-        img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+        img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
         let dot = document.createElement('div');
         dot.className = 'dot';
         btn.appendChild(img);
@@ -1026,7 +1026,7 @@ function createMemoryModal(memoryItems: MemoryItem[], isLoading: boolean = false
 
   // Add Mem0 logo (updated to SVG)
   const logoImg = document.createElement('img');
-  logoImg.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logoImg.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logoImg.style.cssText = `
     width: 26px;
     height: 26px;
@@ -2067,7 +2067,7 @@ function showLoginPopup(): void {
   `;
 
   const logo = document.createElement('img');
-  logo.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logo.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logo.style.cssText = `
     width: 24px;
     height: 24px;
@@ -2076,7 +2076,7 @@ function showLoginPopup(): void {
   `;
 
   const logoDark = document.createElement('img');
-  logoDark.src = chrome.runtime.getURL('icons/mem0-icon-black.png');
+  logoDark.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logoDark.style.cssText = `
     width: 24px;
     height: 24px;

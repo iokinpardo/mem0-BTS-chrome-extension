@@ -530,7 +530,7 @@ function injectMem0Button(): void {
           let btn = document.createElement('button');
           btn.className = 'mem0-btn';
           let img = document.createElement('img');
-          img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+          img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
           let dot = document.createElement('div');
           dot.className = 'dot';
           btn.appendChild(img);
@@ -580,7 +580,7 @@ function injectMem0Button(): void {
         let btn = document.createElement('button');
         btn.className = 'mem0-btn';
         let img = document.createElement('img');
-        img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+        img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
         let dot = document.createElement('div');
         dot.className = 'dot';
         btn.appendChild(img);
@@ -635,7 +635,7 @@ function injectMem0Button(): void {
             let btn = document.createElement('button');
             btn.className = 'mem0-btn';
             let img = document.createElement('img');
-            img.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+            img.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
             let dot = document.createElement('div');
             dot.className = 'dot';
             btn.appendChild(img);
@@ -766,7 +766,7 @@ function injectMem0Button(): void {
 
     // Add icon and text to button label
     const iconImg = document.createElement('img');
-    iconImg.src = chrome.runtime.getURL('icons/mem0-claude-icon-p.png');
+    iconImg.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
     iconImg.style.cssText = `
       width: 18px;
       height: 18px;
@@ -1110,7 +1110,7 @@ function showLoginPopup(): void {
 
   // Add logo and text
   const logoDark = document.createElement('img');
-  logoDark.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logoDark.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logoDark.style.cssText = `
     width: 20px;
     height: 20px;
@@ -1280,7 +1280,7 @@ function createMemoryModal(
 
   // Add Mem0 logo
   const logoImg = document.createElement('img');
-  logoImg.src = chrome.runtime.getURL('icons/mem0-claude-icon.png');
+  logoImg.src = chrome.runtime.getURL('icons/Logo-BTS-01_isotipo-1.png');
   logoImg.style.cssText = `
     width: 26px;
     height: 26px;
