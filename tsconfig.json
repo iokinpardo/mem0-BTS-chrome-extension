@@ -17,8 +17,8 @@
 
     "outDir": "dist",
     "rootDir": ".",
-    "types": ["chrome-types"]
+    "types": ["chrome-types", "webextension-polyfill"]
   },
-  "include": ["**/*.ts", "manifest.json"],
+  "include": ["**/*.ts", "manifest.json", "manifest.firefox.json"],
   "exclude": ["node_modules", "icons/**", "**/*.min.js", "**/dist/**"]
 }

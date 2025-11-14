@@ -30,6 +30,7 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Dashboard build integration:** Production builds now bundle the dashboard script so the Memories and Settings tabs load correctly from the `dist/` package after `npm run build`
 - **Dashboard pagination controls:** Navigate large memory sets with page counters, accurate totals, and adjustable per-page views directly in the dashboard
 - **BTS-branded experience:** Lighter BTS styling with refreshed typography and logo treatment throughout the dashboard, sidebar, and sign-in popup
+- **Firefox-ready build pipeline:** Ship the same BTS Me-mory experience to Firefox via a dedicated manifest, compatibility shim, and packaging scripts
 - **Bulk memory management:** Select multiple memories at once and remove them from BTS in a single action while staying synced with the cloud API
 - **Category-aware filtering:** Review how many memories belong to each category right from the dashboard dropdown to pick the right filter faster
 - **Memory query assistant:** Run quick prompts against your saved memories from the BTS dashboard with OpenAI-powered summaries
@@ -63,6 +64,12 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Usage example:** While chatting in ChatGPT, click the BTS circular button beside the input to open the refreshed overlay—note the BTS logo in the header, accent "Add to Prompt" CTA, and lilac cards that match the dashboard.
 - **Dependencies / breaking changes:** Uses the shared `icons/Logo-BTS-01_isotipo-1.png` asset across content scripts; purely visual with no breaking changes.
 
+### Firefox-ready build pipeline
+- **Feature name:** Firefox-ready build pipeline
+- **Purpose:** Generate a Firefox-compatible package (with gecko metadata, background script fallback, and API shims) so teams can test BTS Me-mory outside of Chromium browsers.
+- **Usage example:** Run `npm run build:firefox` to compile using the Firefox manifest, then execute `npm run dev:firefox` to launch a temporary Firefox profile via `web-ext run` for smoke testing the popup, sidebar, and dashboard.
+- **Dependencies / breaking changes:** Requires Node.js plus the new `webextension-polyfill`, `web-ext`, and `cross-env` dependencies; no breaking changes for Chrome users.
+
 ### Category-aware filtering
 - **Feature name:** Category-aware filtering
 - **Purpose:** Surface the total number of memories within each category so BTS teams can immediately gauge relevance before switching filters.
@@ -86,6 +93,13 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 5. In Chrome, navigate to `chrome://extensions` and toggle **Developer mode** in the top-right corner.
 6. Click **Load unpacked** and pick the generated `dist/` directory.
 7. Pin the OpenMemory icon in your toolbar, click it, and complete sign-in to start capturing memories.
+
+### Firefox build & validation
+
+1. Install Firefox (version 115 or newer) locally.
+2. Run `npm run build:firefox` to generate the Firefox-specific bundle with the Gecko manifest.
+3. For rapid iteration, execute `npm run dev:firefox` to build and immediately launch `web-ext run`, which sideloads the extension into a temporary Firefox profile.
+4. To package an `.xpi`, run `npm run package:firefox` and upload the artifact inside `web-ext-artifacts/` to AMO.
 
 
 ## Usage
