@@ -31,6 +31,7 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Dashboard pagination controls:** Navigate large memory sets with page counters, accurate totals, and adjustable per-page views directly in the dashboard
 - **BTS-branded experience:** Lighter BTS styling with refreshed typography and logo treatment throughout the dashboard, sidebar, and sign-in popup
 - **Firefox-ready build pipeline:** Ship the same BTS Me-mory experience to Firefox via a dedicated manifest, compatibility shim, and packaging scripts
+- **Safari conversion guide:** Follow a documented path to bring the BTS extension to Safari using Apple's WebExtension converter and wrapper app workflow
 - **Bulk memory management:** Select multiple memories at once and remove them from BTS in a single action while staying synced with the cloud API
 - **Category-aware filtering:** Review how many memories belong to each category right from the dashboard dropdown to pick the right filter faster
 - **Memory query assistant:** Run quick prompts against your saved memories from the BTS dashboard with OpenAI-powered summaries
@@ -81,6 +82,12 @@ https://github.com/user-attachments/assets/a069a178-631e-4b35-a182-9f4fef7735c4
 - **Purpose:** Ask natural-language questions about your stored memories directly from the BTS Me-mory Dashboard and receive concise answers generated with a lightweight OpenAI model.
 - **Usage example:** Open the BTS Me-mory Dashboard, type “What did I plan for the product launch?” into the **Ask your memories** panel, and press **Run query** (or hit **Cmd/Ctrl + Enter**) to see an answer plus supporting memory snippets.
 - **Dependencies / breaking changes:** Uses the existing Mem0 API credentials; no additional configuration or breaking changes required.
+
+### Safari compatibility guide
+- **Feature name:** Safari compatibility guide
+- **Purpose:** Provide a step-by-step path for packaging the BTS Mem0 extension with Apple's `safari-web-extension-converter`, configuring entitlements, and distributing through the required wrapper app.
+- **Usage example:** Run `npm run build`, execute `xcrun safari-web-extension-converter dist --project-location safari-mem0 --app-name "Mem0 BTS"`, then open the generated Xcode project to enable and test the extension in Safari Preferences → Extensions.
+- **Dependencies / breaking changes:** Requires macOS with the latest Xcode, an Apple Developer account for signing, and the generated wrapper app (no changes for Chrome/Firefox users).
 
 ## Installation
 
