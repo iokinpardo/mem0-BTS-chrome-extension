@@ -4,10 +4,13 @@ import { Category, Provider } from './types/providers';
 import type { Settings } from './types/settings';
 import { StorageKey } from './types/storage';
 import { isMemoryAllowedForUrl } from './utils/domain_rules';
+import { chromeApi } from './utils/browser-api';
+
+const extension = chromeApi;
 
 function getSettings(): Promise<Settings> {
   return new Promise(resolve => {
-    chrome.storage.sync.get(
+    extension.storage.sync.get(
       [
         StorageKey.API_KEY,
         StorageKey.ACCESS_TOKEN,
@@ -94,7 +97,7 @@ function shouldTrackTyped(details: OnCommittedDetails): boolean {
 
 export function initDirectUrlTracking(): void {
   try {
-    chrome.webNavigation.onCommitted.addListener(async (details: OnCommittedDetails) => {
+    extension.webNavigation.onCommitted.addListener(async (details: OnCommittedDetails) => {
       try {
         if (!shouldTrackTyped(details)) {
           return;
@@ -114,7 +117,7 @@ export function initDirectUrlTracking(): void {
         // Gate by track_searches toggle (default OFF  if undefined). We treat typed URL as part of tracking searches/history.
         const allow = await new Promise<boolean>(resolve => {
           try {
-            chrome.storage.sync.get([StorageKey.TRACK_SEARCHES], d => {
+            extension.storage.sync.get([StorageKey.TRACK_SEARCHES], d => {
               resolve(d[StorageKey.TRACK_SEARCHES] === true);
             });
           } catch {

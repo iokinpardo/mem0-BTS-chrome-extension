@@ -9,10 +9,13 @@ import { Category, Provider } from './types/providers';
 import type { Settings } from './types/settings';
 import { StorageKey } from './types/storage';
 import { isMemoryAllowedForUrl } from './utils/domain_rules';
+import { chromeApi } from './utils/browser-api';
+
+const extension = chromeApi;
 
 export function initContextMenuMemory(): void {
   try {
-    chrome.contextMenus.create(
+    extension.contextMenus.create(
       {
         id: 'mem0.saveSelection',
         title: 'Save to OpenMemory',
@@ -26,7 +29,7 @@ export function initContextMenuMemory(): void {
     // ignore
   }
 
-  chrome.contextMenus.onClicked.addListener(
+  extension.contextMenus.onClicked.addListener(
     async (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => {
       if (
         !tab ||
@@ -89,7 +92,7 @@ export function initContextMenuMemory(): void {
 function toast(tabId: number, message: string, variant: ToastVariant = ToastVariant.SUCCESS): void {
   try {
     const msg: ToastMessage = { type: MessageType.TOAST, payload: { message, variant } };
-    chrome.tabs.sendMessage(tabId, msg);
+    extension.tabs.sendMessage(tabId, msg);
   } catch {
     // Best effort only
   }
@@ -118,7 +121,7 @@ function composeBasic({ selection }: { selection: string; title: string; url: st
 function requestSelectionContext(tabId: number): Promise<SelectionContextResponse> {
   return new Promise(resolve => {
     try {
-      chrome.tabs.sendMessage(
+      extension.tabs.sendMessage(
         tabId,
         { type: MessageType.GET_SELECTION_CONTEXT },
         undefined,
@@ -134,14 +137,35 @@ function requestSelectionContext(tabId: number): Promise<SelectionContextRespons
 
 async function tryInjectSelectionScript(tabId: number): Promise<boolean> {
   try {
-    if (!chrome.scripting) {
-      return false;
+    if (extension.scripting?.executeScript) {
+      await extension.scripting.executeScript({
+        target: { tabId },
+        files: ['selection_context.ts'],
+      });
+      return true;
     }
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ['selection_context.ts'],
-    });
-    return true;
+    if (extension.tabs.executeScript) {
+      await new Promise<void>((resolve, reject) => {
+        try {
+          extension.tabs.executeScript(
+            tabId,
+            { file: 'selection_context.ts' },
+            () => {
+              const err = extension.runtime.lastError;
+              if (err) {
+                reject(err);
+                return;
+              }
+              resolve();
+            }
+          );
+        } catch (err) {
+          reject(err);
+        }
+      });
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }
@@ -149,7 +173,7 @@ async function tryInjectSelectionScript(tabId: number): Promise<boolean> {
 
 function getSettings(): Promise<Settings> {
   return new Promise<Settings>(resolve => {
-    chrome.storage.sync.get(
+    extension.storage.sync.get(
       [
         StorageKey.API_KEY,
         StorageKey.ACCESS_TOKEN,
